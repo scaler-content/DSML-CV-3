@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computer Vision 3 post read</title>
+<meta name="description" content="Computer Vision 3 post read: building a CNN from scratch, forward and backward, layer by layer.">
+<style>
+:root{
+  --v950:#1e0b4b;--v900:#2e1065;--v800:#4c1d95;--v700:#6d28d9;--v600:#7c3aed;--v500:#8b5cf6;
+  --v400:#a78bfa;--v300:#c4b5fd;--v200:#ddd6fe;--v100:#ede9fe;--v50:#f5f3ff;
+  --ink:#1f1637;--muted:#5a4f78;--line:#e4dcfa;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{margin:0;background:#fff;color:var(--ink);font:17px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;line-height:1.2;color:var(--v900);margin:0}
+h2{font-size:clamp(1.7rem,3.4vw,2.3rem);margin:0 0 .7rem}
+h3{font-size:1.35rem;margin:2.2rem 0 .5rem}
+h4{font-size:1.02rem;margin:1.2rem 0 .3rem;color:var(--v800)}
+p{margin:.75rem 0}
+p,ul,ol{max-width:70ch}
+li{margin:.3rem 0}
+a{color:var(--v700)}
+code{font:.88em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--v100);color:var(--v800);padding:.1em .35em;border-radius:5px}
+:focus-visible{outline:3px solid var(--v500);outline-offset:2px;border-radius:4px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:8px;background:var(--v900);color:#fff;padding:.5rem 1rem;z-index:100;border-radius:8px}
+.skip:focus{left:8px}
+
+/* header */
+.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1040px;margin:0 auto;padding:.6rem 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font:700 1.05rem Georgia,serif;color:var(--v900);text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand i{width:18px;height:18px;border-radius:4px;background:conic-gradient(var(--v700) 25%,var(--v300) 0 50%,var(--v500) 0 75%,var(--v900) 0);display:inline-block}
+#bar{height:3px;background:var(--v600);width:0;transition:width .1s}
+.btn{font:600 .9rem system-ui,sans-serif;background:var(--v700);color:#fff;border:2px solid var(--v700);border-radius:10px;padding:7px 14px;cursor:pointer}
+.btn:hover{background:var(--v800);border-color:var(--v800)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--v700)}
+.btn.ghost:hover{background:var(--v50)}
+.btn.sm{padding:4px 10px;font-size:.82rem}
+#toc{position:absolute;right:max(20px,calc(50% - 520px));top:100%;width:min(360px,calc(100vw - 40px));max-height:70vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px -12px rgba(46,16,101,.35);padding:10px}
+#toc ol{list-style:none;margin:0;padding:0;max-width:none}
+#toc a{display:flex;gap:10px;padding:7px 10px;border-radius:8px;text-decoration:none;color:var(--ink);font-size:.95rem;line-height:1.35}
+#toc a b{color:var(--v600);font-variant-numeric:tabular-nums;min-width:1.6em}
+#toc a:hover,#toc a[aria-current=true]{background:var(--v100);color:var(--v900)}
+#toc a[aria-current=true]{font-weight:700}
+
+/* hero */
+.hero{color:#fff;padding:84px 20px 92px;background-color:var(--v900);
+  background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(135deg,var(--v950),var(--v700));
+  background-size:30px 30px,30px 30px,100% 100%}
+.hero .in{max-width:900px;margin:0 auto}
+.eyebrow{font:700 .78rem system-ui;letter-spacing:.14em;text-transform:uppercase;color:var(--v200)}
+.hero h1{color:#fff;font-size:clamp(2.3rem,6.5vw,4rem);margin:.4rem 0 1rem}
+.hero p{font-size:1.2rem;color:var(--v100);max-width:56ch}
+.hero .cta{margin-top:1.6rem;display:flex;gap:12px;flex-wrap:wrap}
+.hero .btn{background:#fff;color:var(--v800);border-color:#fff}
+.hero .btn.ghost{background:transparent;color:#fff;border-color:var(--v300)}
+
+/* sections */
+main section{padding:60px 20px;border-bottom:1px solid var(--line)}
+main section:nth-of-type(even){background:var(--v50)}
+main section>.in{max-width:940px;margin:0 auto}
+.kicker{display:inline-block;font:700 .78rem system-ui;letter-spacing:.14em;text-transform:uppercase;color:var(--v600);margin-bottom:.35rem}
+.callout{border-left:5px solid var(--v600);background:var(--v100);padding:12px 18px;border-radius:0 14px 14px 0;margin:1.2rem 0;max-width:70ch}
+.callout p{margin:.3rem 0}
+.note{font-size:.88rem;color:var(--muted)}
+.formula{font:italic 1.2rem Georgia,serif;text-align:center;background:var(--v900);color:#fff;border-radius:14px;padding:14px 18px;margin:16px 0;overflow-x:auto;max-width:none}
+.formula small{display:block;font:.8rem system-ui;color:var(--v200);font-style:normal;margin-top:4px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#fff}
+.card h4{margin:0 0 .3rem;font-size:1.05rem;color:var(--v900)}
+.card p{margin:.3rem 0;font-size:.97rem}
+.card.dark{background:var(--v900);color:#fff;border-color:var(--v900)}
+.card.dark h4{color:#fff}
+.tag{display:inline-block;font:700 .72rem system-ui;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--v100);color:var(--v800)}
+
+/* widgets */
+.widget{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin:24px 0;box-shadow:0 8px 26px -14px rgba(76,29,149,.35)}
+.wtag{display:inline-block;font:700 .7rem system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--v700);background:var(--v100);padding:5px 10px;border-radius:999px;margin-bottom:8px}
+.wtitle{font:700 1.12rem/1.3 Georgia,serif;color:var(--v900);margin:0 0 4px}
+.wdesc{color:var(--muted);font-size:.93rem;margin:0 0 12px;max-width:none}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:8px 0 14px}
+.seg{display:inline-flex;flex-wrap:wrap}
+.seg button{font:600 .85rem system-ui,sans-serif;border:1.5px solid var(--v300);background:#fff;color:var(--v800);padding:6px 12px;cursor:pointer;margin-left:-1.5px}
+.seg button:first-child{border-radius:10px 0 0 10px;margin-left:0}
+.seg button:last-child{border-radius:0 10px 10px 0}
+.seg button:only-child{border-radius:10px}
+.seg button:hover{background:var(--v50)}
+.seg button[aria-pressed=true]{background:var(--v700);border-color:var(--v700);color:#fff;position:relative;z-index:1}
+select,input[type=number]{font:inherit;font-size:.9rem;padding:6px 8px;border:1.5px solid var(--v300);border-radius:8px;background:#fff;color:var(--v900)}
+input[type=number]{width:92px}
+input[type=range]{accent-color:var(--v600)}
+label.sel,label.chk,label.fld{font-size:.88rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+label.fld{flex-direction:column;align-items:flex-start;gap:3px;font-weight:600}
+.mat{display:grid;gap:3px;grid-template-columns:repeat(var(--c),minmax(0,1fr))}
+.cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;font:600 clamp(.6rem,1.7vw,.88rem)/1.1 ui-monospace,Menlo,monospace;border-radius:6px;background:var(--v50);color:var(--v900);border:1.5px solid var(--v200);padding:0;margin:0}
+button.cell{cursor:pointer}
+button.cell:hover{border-color:var(--v700)}
+.cell.win{outline:3px solid var(--v900);outline-offset:-2px;z-index:1}
+.cell.pad{background:repeating-linear-gradient(45deg,#fff,#fff 4px,var(--v100) 4px,var(--v100) 8px);color:var(--muted);border-style:dashed}
+.cell.neg{border:2px dashed var(--v900)}
+.cell.cur{outline:3px solid var(--v900);outline-offset:-2px}
+.cell.on{background:var(--v700);color:#fff;border-color:var(--v700)}
+.cell.ghost{border:2px dashed var(--v700)}
+.cell.sel{outline:3px solid var(--v900);outline-offset:-2px}
+.bars{display:grid;gap:6px}
+.brow{display:grid;grid-template-columns:minmax(78px,150px) 1fr 62px;gap:10px;align-items:center;font-size:.9rem}
+.bl{font-weight:600;color:var(--v900)}
+.bt{background:var(--v100);border-radius:6px;height:16px;overflow:hidden;display:block}
+.bf{display:block;height:100%;background:var(--v700);border-radius:6px;transition:width .25s}
+.bv{font-variant-numeric:tabular-nums;text-align:right;color:var(--muted)}
+.readout{margin-top:12px;padding:10px 14px;background:var(--v50);border:1px solid var(--line);border-radius:12px;font-size:.93rem;max-width:none}
+.readout b{color:var(--v900)}
+.fig{margin:14px 0}
+.fig img{max-width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block;margin:0 auto}
+.fig figcaption{font-size:.85rem;color:var(--muted);text-align:center;margin-top:6px}
+.fb{display:none;padding:18px;border:2px dashed var(--v300);border-radius:12px;color:var(--muted);font-size:.9rem;text-align:center}
+.fig.broken .fb{display:block}
+.fig.broken img{display:none}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+
+/* tabs */
+.tabs{margin:18px 0}
+.tablist{display:flex;gap:4px;flex-wrap:wrap;border-bottom:2px solid var(--line);margin-bottom:14px}
+.tablist button{font:600 .92rem system-ui,sans-serif;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:9px 14px;cursor:pointer;margin-bottom:-2px;border-radius:8px 8px 0 0}
+.tablist button:hover{color:var(--v800);background:var(--v50)}
+.tablist button[aria-selected=true]{color:var(--v800);border-bottom-color:var(--v700);background:var(--v100)}
+[role=tabpanel]:focus-visible{outline-offset:6px}
+
+/* code + tables */
+details.code{border:1px solid var(--line);border-radius:12px;margin:14px 0;background:#fff;overflow:hidden}
+details.code summary{cursor:pointer;padding:10px 14px;font:600 .9rem system-ui;color:var(--v800);background:var(--v50)}
+details.code[open] summary{border-bottom:1px solid var(--line)}
+pre{margin:0;padding:14px 16px;overflow:auto;background:var(--v950);color:var(--v100);font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.tw{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--v100);color:var(--v900);font-weight:700}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+
+/* specific widgets */
+.pxwrap{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:20px;align-items:start}
+.pxgrid{gap:2px}
+.pxgrid .cell{border-radius:3px;border:0;font-size:clamp(.5rem,1.4vw,.68rem)}
+.vrow{display:flex;align-items:center;gap:8px;margin:5px 0}
+.vl{font-weight:800;color:var(--v800);width:44px;font-size:.82rem}
+.vcells{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:3px;flex:1}
+.vcells .cell{aspect-ratio:auto;height:34px;font-size:clamp(.55rem,1.5vw,.78rem)}
+.flat{display:grid;grid-template-columns:130px 1fr;gap:22px;align-items:start}
+.flat .mat{max-width:130px}
+.srow{display:grid;grid-template-columns:72px minmax(90px,1fr) 42px minmax(90px,1fr) 58px;gap:10px;align-items:center;margin:8px 0;font-size:.9rem}
+.srow input{width:100%}
+.zv{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right}
+.mx{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+.layers{list-style:none;margin:0;padding:0;max-width:none;display:grid;gap:6px}
+.lay{width:100%;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.9fr) minmax(0,1fr);gap:8px;align-items:center;text-align:left;font:inherit;font-size:.86rem;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;color:var(--ink)}
+.lay:hover{border-color:var(--v400)}
+.lay[aria-pressed=true]{border-color:var(--v700);background:var(--v50);box-shadow:inset 4px 0 0 var(--v700)}
+.lay .ln{font-weight:700;color:var(--v900)}
+.lay .ls{color:var(--muted);font-variant-numeric:tabular-nums}
+.lay .lp{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.lay .lb{grid-column:1/-1;height:6px;background:var(--v100);border-radius:4px;overflow:hidden}
+.lay .lb i{display:block;height:100%;background:var(--v600)}
+.ldetail{background:var(--v900);color:#fff;border-radius:14px;padding:16px 18px;position:sticky;top:90px}
+.ldetail h4{color:#fff;margin:0 0 6px}
+.ldetail p{margin:.4rem 0;font-size:.92rem;color:var(--v100)}
+.ldetail code{background:rgba(255,255,255,.14);color:#fff}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin:6px 0}
+.legend i{display:inline-block;width:26px;height:0;border-top:3px solid var(--v900);vertical-align:middle;margin-right:6px}
+.plot{touch-action:pan-y;outline-offset:2px}
+.plot svg{width:100%;height:auto;display:block}
+.cx{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,.7fr) minmax(0,.7fr) minmax(0,1fr);gap:16px;align-items:start}
+.pl{font:700 .78rem system-ui;color:var(--v800);margin-bottom:6px;letter-spacing:.02em}
+.sum{margin-top:8px;font-size:.95rem}
+.stepbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:14px}
+.stepbar input[type=range]{flex:1;min-width:140px}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}
+.stat{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff}
+.stat .k{font:700 .74rem system-ui;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font:700 1.7rem Georgia,serif;color:var(--v900)}
+.stat .s{font-size:.85rem;color:var(--muted)}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vs div{padding:8px 10px;border-radius:10px;background:var(--v50)}
+.vs div.win{background:var(--v900);color:#fff}
+.vs small{display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+.vs b{font:700 1.3rem Georgia,serif}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0;max-width:none}
+.flow span{background:#fff;border:1.5px solid var(--v300);color:var(--v900);padding:8px 12px;border-radius:10px;font:600 .9rem system-ui}
+.flow i{color:var(--v600);font-style:normal;font-weight:800}
+.cortex{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch}
+.cortex .rl{font:700 .75rem system-ui;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center}
+.cortex button{font:inherit;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--ink);font-size:.84rem}
+.cortex button:hover{border-color:var(--v400)}
+.cortex button[aria-pressed=true]{background:var(--v900);color:#fff;border-color:var(--v900)}
+.cortex svg{width:40px;height:40px;display:block;margin:0 auto 4px}
+.cortex button b{display:block;font-size:.86rem}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;margin:8px 0;cursor:pointer;background:#fff}
+.opt:hover{border-color:var(--v400)}
+.opt input{margin-top:5px;accent-color:var(--v700)}
+.opt.ok{background:var(--v900);color:#fff;border-color:var(--v900)}
+.opt.bad{border:2px dashed var(--v900);background:var(--v50)}
+.opt .mk{margin-left:auto;font-weight:700;font-size:.82rem;white-space:nowrap}
+fieldset{border:0;padding:0;margin:0}
+legend{font-weight:700;color:var(--v900);padding:0;margin-bottom:6px}
+.qa{display:flex;gap:10px;margin-top:10px}
+footer{background:var(--v950);color:var(--v200);text-align:center;padding:36px 20px;font:700 1rem Georgia,serif}
+footer small{display:block;font:.8rem system-ui;opacity:.7;margin-top:4px}
+
+@media (max-width:820px){
+  .pxwrap,.flat,.mx{grid-template-columns:1fr}
+  .cx{grid-template-columns:1fr 1fr}
+  .cx .pn-in{grid-column:1/-1}
+  .ldetail{position:static}
+  .cortex{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .cortex .rl{grid-column:1/-1}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  main section{padding:44px 16px}
+  .srow{grid-template-columns:72px 1fr 42px}
+  .srow .bt{grid-column:2}
+  .srow .bv{grid-column:3}
+  .brow{grid-template-columns:84px 1fr 54px}
+}
+/* L2 additions */
+.maps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.maps .mat{gap:2px}
+.maps .cell{border-radius:3px;border:0;font-size:clamp(.5rem,1.4vw,.72rem)}
+.mapbtn{border:2px solid transparent;background:none;border-radius:10px;padding:4px;cursor:pointer;text-align:left;font:inherit}
+.mapbtn:hover{border-color:var(--v300)}
+.mapbtn[aria-pressed=true]{border-color:var(--v700);background:var(--v50)}
+.outrow{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.outrow .cell{width:34px;height:34px;aspect-ratio:auto;border-radius:5px;font-size:.7rem}
+.neurons{gap:3px;max-width:420px}
+.neurons .cell{border-radius:4px;border:0;font-size:0}
+.neurons .cell.on{background:var(--v700)}
+.neurons .cell.off{background:repeating-linear-gradient(45deg,#fff,#fff 3px,var(--v200) 3px,var(--v200) 6px);border:1.5px dashed var(--v300)}
+.meter{height:12px;background:var(--v100);border-radius:6px;overflow:hidden;margin:4px 0 10px}
+.meter i{display:block;height:100%;background:var(--v700);transition:width .2s}
+.meter.warn i{background:var(--v900)}
+.mrow{font-size:.9rem;color:var(--ink)}
+.mrow b{color:var(--v900)}
+.lsteps{list-style:none;counter-reset:s;padding:0;margin:12px 0;max-width:none;display:grid;gap:8px}
+.lsteps li{counter-increment:s;display:flex;gap:12px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;background:#fff;margin:0}
+.lsteps li::before{content:counter(s);flex:none;width:28px;height:28px;border-radius:50%;background:var(--v700);color:#fff;display:flex;align-items:center;justify-content:center;font:700 .85rem system-ui}
+.lsteps li.skip{border-style:dashed;background:var(--v50);color:var(--muted)}
+.lsteps li.skip::before{background:var(--v300)}
+.lsteps li .tg{margin-left:auto;font:700 .72rem system-ui;letter-spacing:.06em;text-transform:uppercase;color:var(--v800);background:var(--v100);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.augg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:12px 0}
+.augg figure{margin:0;text-align:center}
+.augg svg{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.augg figcaption{font:600 .78rem system-ui;color:var(--muted);margin-top:4px}
+.vols{width:100%;height:auto;display:block;margin:6px 0 10px}
+.vols g[role=button]{cursor:pointer}
+.vols g:focus-visible{outline:none}
+.vols g:focus-visible rect:first-of-type{stroke-width:4}
+.rbars{display:grid;gap:8px}
+.rb{display:grid;grid-template-columns:minmax(120px,210px) 1fr 64px;gap:10px;align-items:center;text-align:left;font:inherit;font-size:.9rem;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;color:var(--ink);width:100%}
+.rb:hover{border-color:var(--v400)}
+.rb[aria-pressed=true]{border-color:var(--v700);background:var(--v50);box-shadow:inset 4px 0 0 var(--v700)}
+.rb .bl{font-weight:700}
+.rb .bt{height:18px;position:relative}
+.rb .zone{position:absolute;top:0;bottom:0;left:0;background:repeating-linear-gradient(45deg,var(--v200),var(--v200) 3px,#fff 3px,#fff 6px);opacity:.9}
+.rb .bf{position:relative}
+.mt td,.mt th{text-align:center;padding:6px 8px}
+.mt td:first-child,.mt th:first-child{text-align:left}
+.yes{font-weight:800;color:var(--v700)}
+.no{color:var(--v300)}
+pre.prompt{white-space:pre-wrap;word-break:break-word;border-radius:12px;font-size:13px}
+.hint{font-size:.85rem;color:var(--muted)}
+.cardlink{display:inline-block;margin-top:.4rem;font-weight:700;font-size:.9rem}
+@media (max-width:640px){
+  .maps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rb{grid-template-columns:90px 1fr 54px}
+}
+td.hl{background:var(--v100);font-weight:700}
+label.sel{flex-wrap:wrap;max-width:100%}
+label.sel select{max-width:100%;min-width:0}
+@media (max-width:640px){label.sel{width:100%}label.sel select{width:100%}}
+.yes{white-space:nowrap}
+@media (max-width:640px){.plot svg text{font-size:19px}.vols text{font-size:18px}}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="in">
+    <a class="brand" href="#top"><i aria-hidden="true"></i>Computer Vision 3 post read</a>
+    <button class="btn ghost sm" id="tocBtn" aria-expanded="false" aria-controls="toc">Contents</button>
+  </div>
+  <div id="bar" aria-hidden="true"></div>
+  <nav id="toc" aria-label="Contents" hidden><ol></ol></nav>
+</header>
+
+<div class="hero" id="top">
+  <div class="in">
+    <div class="eyebrow">Deep Learning · Computer Vision</div>
+    <h1>Computer Vision 3 post read</h1>
+    <p>We open the hood of a CNN. Using only PyTorch tensor operations (no <code>nn.Conv2d</code>, no autograd for the layers), we build one from scratch and see exactly how forward propagation turns an image into class probabilities and how backward propagation turns the loss into gradients that update every layer, to classify MNIST digits 0 vs 1.</p>
+    <div class="cta"><a class="btn" href="#plan">Start reading</a><a class="btn ghost" href="#train">Jump to training</a></div>
+  </div>
+</div>
+
+<main id="main">
+
+<section id="plan" data-title="The plan: MNIST and the Layer contract">
+<div class="in">
+  <span class="kicker">01</span>
+  <h2>The plan: MNIST and the Layer contract</h2>
+  <p>Each layer is a small class with a <code>forward()</code> and a <code>backward()</code>, and we also <b>verify our hand-written gradients against PyTorch’s autograd</b>.</p>
+  <h3>About the MNIST dataset</h3>
+  <div class="cmp">
+    <div class="stat"><div class="k">Images</div><div class="v">70,000</div><div class="s">black-and-white handwritten digits</div></div>
+    <div class="stat"><div class="k">Size</div><div class="v">28 × 28</div><div class="s">= 784 pixels</div></div>
+    <div class="stat"><div class="k">Classes</div><div class="v">10</div><div class="s">digits 0 to 9</div></div>
+    <div class="stat"><div class="k">Split</div><div class="v">60k / 10k</div><div class="s">train / test</div></div>
+  </div>
+  <p>Each pixel is an integer from 0 (black) to 255 (white): the lower the value, the darker the colour.</p>
+  <div data-fig="mnist"></div>
+  <details class="code"><summary>Code: imports and seeds</summary><pre data-code="setup"></pre></details>
+
+  <h3>The model we are building</h3>
+  <div data-fig="overview"></div>
+  <p>Every layer (Convolutional, Reshape, MaxPool, Dense and the activations) inherits from one base class, <code>Layer</code>, which has two methods:</p>
+  <div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr))">
+    <div class="card"><span class="tag">forward</span><h4>input → output</h4><p>Takes in the input to the layer and returns the output.</p></div>
+    <div class="card"><span class="tag">backward</span><h4>∂L/∂output → ∂L/∂input</h4><p>Takes the gradient of the loss with respect to the layer’s <b>output</b> (<code>output_gradient</code>), updates the layer’s parameters if it has any, and returns the gradient with respect to the layer’s <b>input</b>, which is handed to the previous layer.</p></div>
+  </div>
+  <details class="code"><summary>Code: the Layer base class</summary><pre data-code="layer"></pre></details>
+</div>
+</section>
+
+<section id="helpers" data-title="Helpers: correlation and convolution">
+<div class="in">
+  <span class="kicker">02</span>
+  <h2>Helpers: correlation and convolution</h2>
+  <p>Forward propagation is simply feeding the data in the forward direction through the network. Each training image is processed through the convolution, activation, pooling, reshape and Dense layers.</p>
+  <p>The Convolutional layer needs two 2D operations:</p>
+  <div class="vs">
+    <div class="win"><b>“Valid” cross-correlation</b><p>No padding; the output shrinks by <code>kernel_size − 1</code>. Used in the forward pass and for the kernel gradient.</p></div>
+    <div class="win"><b>“Full” convolution</b><p>The kernel is flipped by 180° and the input is zero-padded so that every partial overlap is counted. Used for the input gradient.</p></div>
+  </div>
+  <p class="note">Deep learning libraries call the first operation “convolution” even though it is strictly cross-correlation: the kernel is not flipped. Since kernels are learned, it does not matter.</p>
+  <div class="widget" data-w="corr"></div>
+
+  <h3>From slow to fast</h3>
+  <p><b>Step 1, the readable version:</b> slide the kernel over the image with two loops and take “multiply element by element, then sum” at each position.</p>
+  <details class="code"><summary>Code: correlate2d_valid_loop</summary><pre data-code="loop"></pre></details>
+  <p><b>Step 2, the same thing without Python loops.</b> <code>unfold</code> gives <i>all</i> sliding windows at once as a tensor of shape (out_h, out_w, kh, kw). Multiplying by the kernel and summing over the last two dimensions is the same “multiply and sum” for every position simultaneously. This is about 100× faster, which matters because it runs thousands of times during training.</p>
+  <details class="code"><summary>Code: correlate2d_valid and the sanity check</summary><pre data-code="fast"></pre></details>
+  <div class="readout">Fast == loop version: True</div>
+  <p><b>Step 3, “full” convolution:</b> flip the kernel, pad the input with <code>kernel_size − 1</code> zeros on every side, then do a valid cross-correlation. A 4×4 input with a 3×3 kernel gives a 6×6 output.</p>
+  <details class="code"><summary>Code: convolve2d_full</summary><pre data-code="full"></pre></details>
+  <div class="readout">Output of full convolution of 4x4 input with 3x3 kernel: torch.Size([6, 6])</div>
+</div>
+</section>
+
+<section id="convfwd" data-title="Convolutional layer: forward pass">
+<div class="in">
+  <span class="kicker">03</span>
+  <h2>Convolutional layer: forward pass</h2>
+  <p>The <code>Convolutional</code> class takes the <code>input_shape</code> = (channels, height, width), the <code>kernel_size</code>, and the <code>depth</code> = the number of kernels (filters).</p>
+  <h3>Initialization</h3>
+  <ul>
+    <li>Each kernel has shape (input channels, k, k), so all kernels together have shape <code>(depth, input_depth, k, k)</code>.</li>
+    <li>Weights are random, scaled by <code>sqrt(2 / fan_in)</code> (He initialization) so activations do not explode as layers get wider.</li>
+    <li>There is <b>one bias per filter</b>, initialized to 0, like <code>nn.Conv2d</code>.</li>
+    <li>The output shape is <code>(depth, H − k + 1, W − k + 1)</code> (no padding, stride 1).</li>
+  </ul>
+  <div class="widget" data-w="convcalc"></div>
+
+  <h3>What the forward pass does</h3>
+  <p>It iterates through every filter and every input channel, passes a kernel of the specified size over the image and performs the cross-correlation between kernel and input.</p>
+  <div data-fig="convFwd"></div>
+  <div class="formula">Y<sub>i</sub> = B<sub>i</sub> + Σ<sub>j=1..n</sub> X<sub>j</sub> ⋆ K<sub>ij</sub>, &nbsp; i = 1 … d</div>
+  <p>Here Y is the output, equal to the bias plus the sum of cross-correlations (⋆) between the input channels X<sub>j</sub> and the kernel K<sub>ij</sub>. In our implementation the bias B<sub>i</sub> is a single number per filter, added at every position. In the expanded form, <b>d</b> is the number of filters and <b>n</b> is the input depth.</p>
+  <details class="code"><summary>Equations as shown in the lecture</summary><div data-fig="convEq1,convEq2"></div></details>
+  <p>In code, for every filter <code>i</code>, accumulate the cross-correlation of each input channel <code>j</code> with its kernel <code>K[i, j]</code>, then add the bias.</p>
+  <details class="code"><summary>Code: Convolutional (forward)</summary><pre data-code="convf"></pre></details>
+  <p>Quick test: one 28×28 grayscale image through 5 filters of size 3×3 gives a <b>(5, 26, 26)</b> output.</p>
+  <details class="code"><summary>Code: shape test</summary><pre data-code="convtest"></pre></details>
+</div>
+</section>
+
+<section id="convbwd" data-title="Convolutional layer: backward pass">
+<div class="in">
+  <span class="kicker">04</span>
+  <h2>Convolutional layer: backward pass</h2>
+  <p>Backward propagation updates the weights and biases of the model with respect to its loss. For a convolution, the learnable parameters are the <b>kernels</b> and the <b>biases</b>; we also need the gradient with respect to the <b>input</b> so it can be passed to the previous layer. Starting from the derivative of the loss with respect to the layer’s output, we compute:</p>
+  <ul><li>∂L/∂K and ∂L/∂B, to update the kernels and biases;</li><li>∂L/∂X, to hand back to the previous layer.</li></ul>
+  <div data-fig="bp0"></div>
+
+  <h3>Three gradients</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Gradient</th><th>Formula</th><th>Code idea</th></tr></thead>
+    <tbody>
+      <tr><td>∂L/∂K[i,j]</td><td>valid cross-correlation of <b>input channel j</b> with <b>output gradient i</b></td><td><code>correlate2d_valid(input[j], output_gradient[i])</code></td></tr>
+      <tr><td>∂L/∂B[i]</td><td>sum of output gradient i</td><td><code>output_gradient[i].sum()</code></td></tr>
+      <tr><td>∂L/∂X[j]</td><td>sum over filters i of the <b>full convolution</b> of output gradient i with kernel K[i,j]</td><td><code>convolve2d_full(output_gradient[i], kernels[i,j])</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>The bias uses one scalar per filter, added at every position of that filter’s output. By the chain rule its gradient is the <b>sum of the output gradient over all positions</b> of that filter. (The lecture figure shows the special case where the bias has the full output shape; there the gradient is just the output gradient itself.)</p>
+  <p>The input gradient is the output gradient <b>fully convolved</b> with the kernel, that is, fully cross-correlated with the kernel rotated by 180°.</p>
+  <details class="code"><summary>Derivations as shown in the lecture</summary><div data-fig="bp1,bp2,bp3,bpGif"></div></details>
+  <div class="widget" data-w="back"></div>
+  <p>Then a gradient-descent step: <code>parameter -= learning_rate * gradient</code>.</p>
+  <details class="code"><summary>Code: the complete Convolutional layer</summary><pre data-code="convb"></pre></details>
+
+  <h3>Did we get the math right?</h3>
+  <p>A hand-written backward pass is easy to get subtly wrong. A <b>gradient check</b> compares our gradients with those PyTorch computes automatically for <code>F.conv2d</code>. With <code>learning_rate=1</code>, the change in the parameters equals the gradient.</p>
+  <details class="code"><summary>Code: gradient check against autograd</summary><pre data-code="gcheck"></pre></details>
+  <div class="readout">forward  matches: True<br>dL/dX    matches: True<br>dL/dK    matches: True<br>dL/dB    matches: True</div>
+  <div class="widget" data-w="quiz" data-q="q1"></div>
+</div>
+</section>
+
+<section id="acts" data-title="Activation functions">
+<div class="in">
+  <span class="kicker">05</span>
+  <h2>Activation functions</h2>
+  <p>The CNN uses three activations: ReLU, TanH and Softmax. In backpropagation, the gradient arriving from the next layer is multiplied <b>element-wise</b> by the derivative of the activation, evaluated at the layer’s input (chain rule).</p>
+  <details class="code"><summary>Code: the Activation base class</summary><pre data-code="act"></pre></details>
+  <div class="widget" data-w="act"></div>
+
+  <h3>ReLU</h3>
+  <p>If the input is less than zero, the output is zero; otherwise the output equals the input. ReLU introduces non-linearity. Because it zeroes out every negative activation it produces sparse, “either active or silent” outputs, and helps avoid the vanishing-gradient problems that saturating activations like sigmoid or tanh can run into.</p>
+  <div class="formula">f(x) = max(0, x) &nbsp;&nbsp; f′(x) = 0 if x &lt; 0, 1 if x &gt; 0</div>
+  <p>The derivative f′(0) is not defined, so it is usually set to 0.</p>
+  <details class="code"><summary>Code: ReLU</summary><pre data-code="relu"></pre></details>
+
+  <h3>TanH</h3>
+  <p>TanH takes any input and outputs a value between −1 and 1. The greater the input, the closer the output is to 1; the smaller the input, the closer it is to −1. In practice it is useful when we want the model to converge quickly with a larger learning rate, since it produces stronger gradients than a saturating activation like sigmoid.</p>
+  <div class="formula">tanh′(x) = 1 − tanh²(x) &nbsp; (by the quotient rule)</div>
+  <details class="code"><summary>Code: TanH</summary><pre data-code="tanh"></pre></details>
+
+  <h3>Softmax</h3>
+  <p>Softmax is generally the last layer of a network. It converts the classification layer’s outputs to a probability map whose entries sum to 1. Here there are 2 output classes (digit 0 vs. digit 1).</p>
+  <p>With Σ<sub>C</sub> = Σ<sub>d</sub> e<sup>z<sub>d</sub></sup> so that y<sub>c</sub> = e<sup>z<sub>c</sub></sup> / Σ<sub>C</sub>, the derivative of output y with respect to input z is y<sub>i</sub>(δ<sub>ij</sub> − y<sub>j</sub>). The first part propagates the softmax values down the diagonal, then we subtract the product of softmax values. In matrix form the Jacobian is <code>diag(y) − y yᵀ</code>.</p>
+  <div class="callout"><p><b>Numerical note.</b> <code>exp(z)</code> overflows for large <code>z</code>, so in the forward pass we first subtract <code>max(z)</code> from all inputs. This does not change the result (it cancels in the ratio) but keeps the numbers small. Try the “add a constant” slider in the widget above.</p></div>
+  <details class="code"><summary>Code: Softmax</summary><pre data-code="softmax"></pre></details>
+  <details class="code"><summary>Activation figures from the lecture</summary><div data-fig="relu1,relu2,relu3,tanh1,tanh2,tanh3,sm1,sm2"></div></details>
+</div>
+</section>
+
+<section id="pool" data-title="Max pooling">
+<div class="in">
+  <span class="kicker">06</span>
+  <h2>Max pooling</h2>
+  <p>The MaxPool layer selects the maximum pixel value in each kernel area of every image; the filter slides over the image according to the given stride.</p>
+  <div data-fig="mp1,mp2"></div>
+  <h3>Backward propagation</h3>
+  <ul>
+    <li>Only the input elements selected during the forward pass receive gradient; every other index is zero.</li>
+    <li>If several values in a window tie for the maximum (common right after ReLU, which creates many zeros), the gradient goes to just <b>one</b> of them (the first), as PyTorch does. Otherwise the same gradient would be counted several times.</li>
+  </ul>
+  <div data-fig="mp3"></div>
+  <div class="widget" data-w="pool"></div>
+  <h3>Vectorized implementation</h3>
+  <ul>
+    <li><b>Forward:</b> <code>unfold</code> gives all pooling windows; take the max of each window <b>and remember which position inside the window won</b> (<code>argmax</code>).</li>
+    <li><b>Backward:</b> start from zeros and <b>add</b> each output gradient at the remembered winning position. We add because with stride &lt; kernel size, windows overlap and one input pixel can win in several windows.</li>
+  </ul>
+  <details class="code"><summary>Code: MaxPool</summary><pre data-code="pool"></pre></details>
+  <h3>Checking against PyTorch</h3>
+  <details class="code"><summary>Code: compare with F.max_pool2d</summary><pre data-code="poolcheck"></pre></details>
+  <div class="readout">forward matches : True<br>backward matches: True</div>
+  <div class="widget" data-w="quiz" data-q="q2"></div>
+</div>
+</section>
+
+<section id="dense" data-title="Reshape and Dense">
+<div class="in">
+  <span class="kicker">07</span>
+  <h2>Reshape and Dense</h2>
+  <h3>Reshape (flattening)</h3>
+  <p>The Reshape layer changes the dimensions of a tensor to a compatible shape using <code>torch.reshape</code>, so convolutional output can be passed through dense layers. For example, a tensor of size (5, 4, 1) becomes (20, 1). In our network, (5, 25, 25) becomes (3125, 1). The backward pass simply reshapes the gradient back.</p>
+  <details class="code"><summary>Code: Reshape</summary><pre data-code="reshape"></pre></details>
+
+  <h3>Dense layer</h3>
+  <p>The Dense layer (fully-connected or linear) converts the features learned by the convolutional layers into a feature vector and classifies it, here into 2 classes.</p>
+  <div class="formula">Z = W · X + b</div>
+  <p>W is the weight matrix, X the input, b the bias and Z the output. During backpropagation:</p>
+  <ul>
+    <li>weights gradient = output gradient · transpose of the input (<code>dW = dY·Xᵀ</code>);</li>
+    <li>input gradient = transpose of the weights · output gradient (<code>dX = Wᵀ·dY</code>), computed with the <b>old</b> weights;</li>
+    <li>the weights are updated with the weights gradient and the bias with the output gradient, both scaled by the learning rate.</li>
+  </ul>
+  <details class="code"><summary>Code: Dense</summary><pre data-code="dense"></pre></details>
+  <div data-fig="dense"></div>
+  <div class="widget" data-w="quiz" data-q="q3"></div>
+  <div class="widget" data-w="neuron"></div>
+</div>
+</section>
+
+<section id="loss" data-title="The loss function">
+<div class="in">
+  <span class="kicker">08</span>
+  <h2>The loss function</h2>
+  <p>Log loss is the negative mean of the log of the correctly predicted probabilities. It shows how close the predicted probability is to the true value: the more the prediction diverges from the actual value, the higher the log loss.</p>
+  <p>During backpropagation we need the derivative of the loss with respect to the output to compute the gradients of the network. Since the network ends in a Softmax with two outputs and the target is one-hot, we apply this binary log loss to each of the two outputs and average them. We also <b>clip</b> predictions to [ε, 1 − ε] so that <code>log(0)</code> can never produce <code>inf</code> or <code>nan</code>.</p>
+  <div class="formula">∂L/∂y_pred = 1/N · ( (1 − y_true)/(1 − y_pred) − y_true/y_pred )</div>
+  <div class="widget" data-w="loss"></div>
+  <details class="code"><summary>Code: log_loss and log_loss_prime</summary><pre data-code="loss"></pre></details>
+  <details class="code"><summary>Log-loss figures from the lecture</summary><div data-fig="ll1,ll2"></div></details>
+</div>
+</section>
+
+<section id="data" data-title="Data and architecture">
+<div class="in">
+  <span class="kicker">09</span>
+  <h2>Data and architecture</h2>
+  <h3>Loading and preprocessing</h3>
+  <p>To keep the from-scratch network fast, we keep only the digits <b>0 and 1</b> and only a <b>subset</b>: up to <code>limit</code> images per digit. Pixels are scaled to [0, 1] and labels are one-hot encoded as column vectors of shape (2, 1).</p>
+  <div class="widget" data-w="prep"></div>
+  <details class="code"><summary>Code: loading MNIST and preprocess_data</summary><pre data-code="data"></pre></details>
+  <div class="readout">torch.Size([60000, 28, 28]) torch.Size([10000, 28, 28])<br>Train: torch.Size([2000, 1, 28, 28]) torch.Size([2000, 2, 1]) | Test: torch.Size([400, 1, 28, 28])</div>
+
+  <h3>The network</h3>
+  <div data-fig="arch"></div>
+  <p>We define the network making sure that <b>the output shape of every layer equals the input shape of the next one</b>:</p>
+  <div class="flow"><span>(1,28,28)</span><i>→</i><span>Conv 5×3×3</span><i>→</i><span>(5,26,26)</span><i>→</i><span>ReLU</span><i>→</i><span>MaxPool 2×2, stride 1</span><i>→</i><span>(5,25,25)</span><i>→</i><span>Reshape</span><i>→</i><span>(3125,1)</span><i>→</i><span>Dense</span><i>→</i><span>(100,1)</span><i>→</i><span>TanH</span><i>→</i><span>Dense</span><i>→</i><span>(2,1)</span><i>→</i><span>Softmax</span></div>
+  <div class="widget" data-w="net"></div>
+  <details class="code"><summary>Code: the network</summary><pre data-code="network"></pre></details>
+</div>
+</section>
+
+<section id="train" data-title="Training and evaluating">
+<div class="in">
+  <span class="kicker">10</span>
+  <h2>Training and evaluating</h2>
+  <p>For each training image, <code>train</code>:</p>
+  <ol><li>runs the <b>forward pass</b> through all layers (<code>predict</code>);</li><li>computes the <b>loss</b>;</li><li>starts the <b>backward pass</b> with the loss derivative and walks through the layers in <b>reverse order</b>, each one updating its own parameters and passing the input-gradient back.</li></ol>
+  <p>After every epoch it prints the average loss and the training accuracy.</p>
+  <div class="widget" data-w="step"></div>
+  <details class="code"><summary>Code: predict and train</summary><pre data-code="train"></pre></details>
+  <div class="widget" data-w="train"></div>
+
+  <h3>Evaluating on test data</h3>
+  <p><code>predict</code> runs forward propagation through every layer; the <code>argmax</code> of the output probabilities gives the predicted digit.</p>
+  <details class="code"><summary>Code: test-set evaluation</summary><pre data-code="eval"></pre></details>
+  <div class="readout">Accuracy of the network on test data: 100.00%  (400/400)</div>
+  <h3>Random samples</h3>
+  <p>A few random test images with the network’s prediction (green = correct, red = wrong).</p>
+  <div data-fig="samples"></div>
+  <details class="code"><summary>Code: show_random_samples</summary><pre data-code="samples"></pre></details>
+</div>
+</section>
+
+<section id="inside" data-title="Inside the layers, and wrap-up">
+<div class="in">
+  <span class="kicker">11</span>
+  <h2>Inside the layers, and wrap-up</h2>
+  <h3>What each layer does to an image</h3>
+  <p>Rows: <b>input → convolution → ReLU → max-pool</b>; columns: the 5 filters. Each learned kernel highlights different strokes and edges, ReLU removes negative responses, and pooling shrinks the maps while keeping the strongest responses.</p>
+  <div data-fig="layers"></div>
+  <details class="code"><summary>Code: show_layer_outputs</summary><pre data-code="layerout"></pre></details>
+  <h3>Layer output shapes</h3>
+  <details class="code"><summary>Code: layer_shape</summary><pre data-code="shapes"></pre></details>
+  <div class="readout"><pre style="margin:0;background:none;border:0;padding:0">True label: 0
+Input         (1, 28, 28)
+Convolutional (5, 26, 26)
+ReLU          (5, 26, 26)
+MaxPool       (5, 25, 25)
+Reshape       (3125, 1)
+Dense         (100, 1)
+TanH          (100, 1)
+Dense         (2, 1)
+Softmax       (2, 1)
+Predicted : 0</pre></div>
+
+  <h3>Every layer, forward and backward</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Layer</th><th>Forward</th><th>Backward</th></tr></thead>
+    <tbody>
+      <tr><td>Convolutional</td><td>Y<sub>i</sub> = B<sub>i</sub> + Σ<sub>j</sub> X<sub>j</sub> ⋆ K<sub>ij</sub></td><td>kernel gradient = correlation of input with output gradient; input gradient = <i>full convolution</i> of output gradient with the kernel</td></tr>
+      <tr><td>Activation</td><td>f(x)</td><td>multiply by f′(x)</td></tr>
+      <tr><td>MaxPool</td><td>max of each window (remember the winner)</td><td>route gradient to the winner</td></tr>
+      <tr><td>Reshape</td><td>(5,25,25) → (3125,1)</td><td>reshape back</td></tr>
+      <tr><td>Dense</td><td>Z = W·X + b</td><td>dW = dY·Xᵀ, dX = Wᵀ·dY</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><p>Every layer = <code>forward</code> (compute output) + <code>backward</code> (turn <code>dL/dOutput</code> into <code>dL/dInput</code> and update parameters). A <b>gradient check</b> against autograd is the standard way to validate a hand-written backward pass.</p></div>
+</div>
+</section>
+
+</main>
+<footer>Computer Vision 3 post read<small>Interactive learning article</small></footer>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const fmt=n=>Number(n).toLocaleString('en-US');
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+let uid=0;
+function h(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;}
+function mix(t){t=Math.max(0,Math.min(1,t));const a=[255,255,255],b=[109,40,217];return 'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')+')';}
+function ink(t){return t>0.5?'#fff':'#2e1065';}
+function shell(root,title,desc){root.classList.add('widget');root.innerHTML='<span class="wtag">Interactive</span><h4 class="wtitle">'+title+'</h4>'+(desc?'<p class="wdesc">'+desc+'</p>':'')+'<div class="wbody"></div>';return $('.wbody',root);}
+function seg(container,options,value,onChange,label){
+  const wrap=h('<div class="seg" role="group" aria-label="'+label+'"></div>');
+  function set(v){value=v;Array.from(wrap.children).forEach((b,i)=>b.setAttribute('aria-pressed',String(options[i].value===v)));}
+  options.forEach(o=>{const b=h('<button type="button" aria-pressed="false">'+o.label+'</button>');b.addEventListener('click',()=>{set(o.value);onChange(o.value);});wrap.appendChild(b);});
+  set(value);container.appendChild(wrap);return {set};
+}
+
+/* ---------- chart helper (inline SVG) ---------- */
+function niceMax(m){const st=m<=3?0.5:m<=6?1:2;return Math.ceil(m/st)*st;}
+function stepTicks(a,b,st){const t=[];for(let v=a;v<=b+1e-9;v+=st)t.push(+v.toFixed(6));return t;}
+function epochTicks(n){const st=n<=12?1:5,t=[1];for(let v=st;v<=n;v+=st)if(v>1)t.push(v);return t;}
+function chart(o){
+  const W=o.W||640,H=o.H||300,M=Object.assign({l:52,r:16,t:16,b:40},o.M||{});
+  const iw=W-M.l-M.r,ih=H-M.t-M.b,x0=o.x[0],x1=o.x[1],y0=o.y[0],y1=o.y[1];
+  const X=v=>M.l+(v-x0)/(x1-x0)*iw,Y=v=>M.t+ih-(v-y0)/(y1-y0)*ih;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(o.label||'Chart')+'">';
+  (o.yt||[]).forEach(t=>{s+='<line x1="'+M.l+'" x2="'+(W-M.r)+'" y1="'+Y(t).toFixed(1)+'" y2="'+Y(t).toFixed(1)+'" stroke="#e4dcfa"/><text x="'+(M.l-8)+'" y="'+(Y(t)+4).toFixed(1)+'" text-anchor="end" font-size="11" fill="#5a4f78">'+(o.yf?o.yf(t):t)+'</text>';});
+  (o.xt||[]).forEach(t=>{s+='<text x="'+X(t).toFixed(1)+'" y="'+(H-M.b+17)+'" text-anchor="middle" font-size="11" fill="#5a4f78">'+(o.xf?o.xf(t):t)+'</text>';});
+  s+='<line x1="'+M.l+'" x2="'+(W-M.r)+'" y1="'+(M.t+ih)+'" y2="'+(M.t+ih)+'" stroke="#a78bfa"/>';
+  if(o.xlabel)s+='<text x="'+(M.l+iw/2)+'" y="'+(H-5)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#2e1065">'+esc(o.xlabel)+'</text>';
+  if(o.ylabel)s+='<text transform="translate(13 '+(M.t+ih/2)+') rotate(-90)" text-anchor="middle" font-size="12" font-weight="700" fill="#2e1065">'+esc(o.ylabel)+'</text>';
+  (o.hl||[]).forEach(v=>{s+='<line x1="'+M.l+'" x2="'+(W-M.r)+'" y1="'+Y(v.y).toFixed(1)+'" y2="'+Y(v.y).toFixed(1)+'" stroke="'+(v.c||'#a78bfa')+'" stroke-width="'+(v.w||1.5)+'"'+(v.d?' stroke-dasharray="'+v.d+'"':'')+'/>';});
+  (o.vl||[]).forEach(v=>{const x=X(v.x),right=x>W*0.7;s+='<line x1="'+x.toFixed(1)+'" x2="'+x.toFixed(1)+'" y1="'+M.t+'" y2="'+(M.t+ih)+'" stroke="'+(v.c||'#8b5cf6')+'" stroke-width="'+(v.w||1.5)+'" stroke-dasharray="'+(v.d||'4 4')+'"/>'+(v.label?'<text x="'+(x+(right?-4:4)).toFixed(1)+'" y="'+(M.t+11)+'" text-anchor="'+(right?'end':'start')+'" font-size="10.5" font-weight="700" fill="#4c1d95">'+esc(v.label)+'</text>':'');});
+  if(o.cur!=null){const x=X(o.cur).toFixed(1);s+='<line x1="'+x+'" x2="'+x+'" y1="'+M.t+'" y2="'+(M.t+ih)+'" stroke="#a78bfa" stroke-width="2"/>';}
+  (o.series||[]).forEach(se=>{
+    if(!se.pts.length)return;
+    s+='<path d="'+se.pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ')+'" fill="none" stroke="'+se.c+'" stroke-width="'+(se.w||2.6)+'"'+(se.d?' stroke-dasharray="'+se.d+'"':'')+' stroke-linejoin="round"/>';
+    if(se.m)se.pts.forEach(p=>{const hi=o.cur!=null&&Math.abs(p[0]-o.cur)<1e-9,r=hi?6:3.4,x=X(p[0]),y=Y(p[1]);
+      if(se.m==='c')s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="'+se.c+'"/>';
+      else if(se.m==='s')s+='<rect x="'+(x-r).toFixed(1)+'" y="'+(y-r).toFixed(1)+'" width="'+2*r+'" height="'+2*r+'" fill="#fff" stroke="'+se.c+'" stroke-width="2.2"/>';
+      else s+='<path d="M'+x.toFixed(1)+' '+(y-r-1).toFixed(1)+' L'+(x+r+1).toFixed(1)+' '+(y+r).toFixed(1)+' L'+(x-r-1).toFixed(1)+' '+(y+r).toFixed(1)+' Z" fill="#fff" stroke="'+se.c+'" stroke-width="2.2"/>';});
+  });
+  (o.dots||[]).forEach(d=>{s+='<circle cx="'+X(d.x).toFixed(1)+'" cy="'+Y(d.y).toFixed(1)+'" r="6" fill="'+d.c+'" stroke="#fff" stroke-width="2"/>';});
+  return s+'</svg>';
+}
+function legendHtml(S){return S.map(se=>'<span><i style="border-color:'+se.c+';'+(se.d?'border-top-style:dashed':'')+'"></i>'+se.n+'</span>').join('');}
+function fmtLR(v){return v.toFixed(6).replace(/0+$/,'').replace(/\.$/,'');}
+
+/* ---------- figures ---------- */
+const CF='https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/';
+function fig(path,alt,cap,w){
+  return '<figure class="fig"><img src="'+CF+path+'" alt="'+esc(alt)+'" loading="lazy"'+(w?' style="max-width:'+w+'px"':'')+' onerror="this.closest(\'.fig\').classList.add(\'broken\')"><div class="fb" role="note">Image not available offline. '+esc(alt)+'</div>'+(cap?'<figcaption>'+cap+'</figcaption>':'')+'</figure>';
+}
+/* ---------- tabs ---------- */
+function mountTabs(root,items){
+  root.classList.add('tabs');
+  const id='t'+(++uid),list=h('<div class="tablist" role="tablist"></div>'),tabs=[],panels=[];
+  items.forEach((it,i)=>{
+    const b=h('<button type="button" role="tab" id="'+id+'-t'+i+'" aria-controls="'+id+'-p'+i+'">'+it.label+'</button>');
+    const p=h('<div role="tabpanel" id="'+id+'-p'+i+'" aria-labelledby="'+id+'-t'+i+'" tabindex="0"></div>');
+    p.innerHTML=it.html;tabs.push(b);panels.push(p);list.appendChild(b);
+  });
+  root.append(list,...panels);
+  function sel(i,focus){tabs.forEach((b,j)=>{const on=i===j;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;panels[j].hidden=!on;});if(focus)tabs[i].focus();}
+  tabs.forEach((b,i)=>{
+    b.addEventListener('click',()=>sel(i));
+    b.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'){e.preventDefault();sel((i+1)%tabs.length,true);}
+      else if(e.key==='ArrowLeft'){e.preventDefault();sel((i-1+tabs.length)%tabs.length,true);}
+      else if(e.key==='Home'){e.preventDefault();sel(0,true);}
+      else if(e.key==='End'){e.preventDefault();sel(tabs.length-1,true);}
+    });
+  });
+  sel(0);
+}
+const code=k=>'<pre data-code="'+k+'"></pre>';
+function wQuiz(root,key){
+  const d=QUIZ[key],name='q'+(++uid),L='abcd';
+  root.classList.add('widget');
+  root.innerHTML='<span class="wtag">Check your understanding</span><fieldset><legend>'+d.q+'</legend>'+d.c.map((c,i)=>'<label class="opt"><input type="radio" name="'+name+'" value="'+i+'"><span>'+(d.letters?L[i]+') ':'')+c+'</span><span class="mk"></span></label>').join('')+'</fieldset><div class="qa"><button type="button" class="btn" disabled>Check answer</button><button type="button" class="btn ghost" hidden>Try again</button></div><div class="readout" aria-live="polite" hidden></div>';
+  const [chk,again]=$$('.btn',root),out=$('.readout',root),opts=$$('.opt',root),radios=$$('input',root);
+  radios.forEach(r=>r.addEventListener('change',()=>{chk.disabled=false;}));
+  chk.addEventListener('click',()=>{
+    const v=radios.findIndex(r=>r.checked);if(v<0)return;
+    opts.forEach((o,i)=>{o.classList.remove('ok','bad');$('.mk',o).textContent='';if(i===d.a){o.classList.add('ok');$('.mk',o).textContent='✓ Correct answer';}else if(i===v){o.classList.add('bad');$('.mk',o).textContent='✗ Your choice';}});
+    out.hidden=false;out.innerHTML='<b>'+(v===d.a?'Correct.':'Not quite.')+'</b> '+d.e;
+    chk.hidden=true;again.hidden=false;radios.forEach(r=>r.disabled=true);
+  });
+  again.addEventListener('click',()=>{
+    opts.forEach(o=>{o.classList.remove('ok','bad');$('.mk',o).textContent='';});
+    radios.forEach(r=>{r.checked=false;r.disabled=false;});out.hidden=true;chk.hidden=false;chk.disabled=true;again.hidden=true;
+  });
+}
+
+/* ---------- contents + progress ---------- */
+function wToc(){
+  const secs=$$('main section[data-title]'),ol=$('#toc ol'),btn=$('#tocBtn'),toc=$('#toc');
+  ol.innerHTML=secs.map((s,i)=>'<li><a href="#'+s.id+'"><b>'+String(i+1).padStart(2,'0')+'</b><span>'+s.dataset.title+'</span></a></li>').join('');
+  function close(){toc.hidden=true;btn.setAttribute('aria-expanded','false');}
+  btn.addEventListener('click',()=>{const o=toc.hidden;toc.hidden=!o;btn.setAttribute('aria-expanded',String(o));});
+  ol.addEventListener('click',e=>{if(e.target.closest('a'))close();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!toc.hidden){close();btn.focus();}});
+  document.addEventListener('click',e=>{if(!toc.hidden&&!e.target.closest('#toc')&&!e.target.closest('#tocBtn'))close();});
+  const links=$$('a',ol);
+  if('IntersectionObserver' in window){
+    const io=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.removeAttribute('aria-current'));const l=$('a[href="#'+en.target.id+'"]',ol);if(l)l.setAttribute('aria-current','true');}});},{rootMargin:'-30% 0px -60% 0px'});
+    secs.forEach(s=>io.observe(s));
+  }
+  const bar=$('#bar');
+  function prog(){const d=document.documentElement,t=d.scrollHeight-d.clientHeight;bar.style.width=(t>0?Math.min(100,d.scrollTop/t*100):0)+'%';}
+  window.addEventListener('scroll',prog,{passive:true});prog();
+}
+/* ---------- figures (hosted lecture images) ---------- */
+const F=(id,file,alt,cap,w)=>fig('249/'+id+'/original/'+file,alt,cap,w);
+const FIGS={
+  mnist:F(830,'Screenshot_2026-10-27_222517.png?1793120130','Sample handwritten MNIST digits','Sample MNIST digits',560),
+  overview:F(831,'Screenshot_2026-10-27_222622.png?1793120194','Overview diagram of the CNN built from scratch','The CNN we build from scratch',520),
+  convEq1:F(834,'Screenshot_2026-10-27_222848.png?1793120339','Equation for the forward pass of the convolutional layer','Forward pass: Y_i = B_i + Σ_j X_j ⋆ K_ij',560),
+  convEq2:F(837,'Screenshot_2026-10-27_223125.png?1793120497','The forward-pass equation expanded for d filters and n input channels','The same equation expanded (d filters, n input channels)',560),
+  convFwd:F(835,'Screenshot_2026-10-27_222925.png?1793120378','Diagram of a kernel sliding over the input image','A kernel passing over the input image',560),
+  bp0:F(838,'Screenshot_2026-10-27_223231.png?1793120570','Overview of the gradients computed in the convolutional layer backward pass','What the backward pass has to compute',520),
+  bp1:F(839,'Screenshot_2026-10-27_223322.png?1793120617','Computing the gradient of the loss with respect to the kernels','Gradient with respect to the kernels',360),
+  bp2:F(841,'Screenshot_2026-10-27_223435.png?1793120699','Computing the gradient of the loss with respect to the bias','Gradient with respect to the bias',520),
+  bp3:F(842,'Screenshot_2026-10-27_223447.png?1793120740','Computing the gradient of the loss with respect to the input','Gradient with respect to the input',360),
+  bpGif:F(843,'img4.gif?1793120856','Animation: the input gradient is the output gradient fully convolved with the kernel rotated by 180 degrees','Input gradient = output gradient fully convolved with the rotated kernel',480),
+  relu1:F(829,'Screenshot_2026-10-27_222408.png?1793120059','The ReLU activation function','ReLU',520),
+  relu2:F(828,'Screenshot_2026-10-27_222320.png?1793120013','Definition of the ReLU function','Definition of ReLU',520),
+  relu3:F(827,'Screenshot_2026-10-27_222234.png?1793119969','Derivative of the ReLU function','Derivative of ReLU',420),
+  tanh1:F(825,'Screenshot_2026-10-27_222147.png?1793119921','The TanH activation function','TanH',520),
+  tanh2:F(824,'Screenshot_2026-10-27_222052.png?1793119864','TanH compared with a saturating activation','TanH in practice',520),
+  tanh3:F(822,'Screenshot_2026-10-27_222007.png?1793119825','Derivative of tanh using the quotient rule','Derivative of tanh',520),
+  sm1:F(821,'Screenshot_2026-10-27_221922.png?1793119775','Softmax converting scores to probabilities','Softmax',520),
+  sm2:F(818,'Screenshot_2026-10-27_221756.png?1793119687','The derivative of softmax with respect to its input','Derivative of softmax (Jacobian)',520),
+  mp1:F(817,'Screenshot_2026-10-27_221724.png?1793119654','Max pooling selecting the maximum in each window','Max pooling',520),
+  mp2:F(815,'Screenshot_2026-10-27_221549.png?1793119564','Forward propagation through max pooling','Max pooling: forward',520),
+  mp3:F(814,'Screenshot_2026-10-27_221507.png?1793119518','Backward propagation through max pooling','Max pooling: backward',520),
+  dense:F(813,'Screenshot_2026-10-27_221335.png?1793119426','Dense layer forward and backward propagation','Dense layer',520),
+  ll1:F(812,'Screenshot_2026-10-27_221218.png?1793119391','Definition of log loss','Log loss',520),
+  ll2:F(810,'Screenshot_2026-10-27_221210.png?1793119350','Derivative of log loss','Derivative of log loss',520),
+  arch:F(807,'Screenshot_2026-10-27_221010.png?1793119222','Architecture diagram of the network','The network architecture',560),
+  samples:F(806,'Screenshot_2026-10-27_220902.png?1793119160','Random test images with the network predictions, green when correct','Random test samples: predicted vs true digit',640),
+  layers:F(804,'Screenshot_2026-10-27_220753.png?1793119095','Outputs of the input, convolution, ReLU and max-pool stages for each of the five filters','Rows: input → convolution → ReLU → max-pool; columns: the 5 filters',560)
+};
+const QUIZ={
+  q1:{q:'How can we calculate the gradients to update Kernel weights in Convolutional Layer during Backpropagation ?',letters:true,c:['Calculating derivative of image pixels with respect to kernel weights','Calculating derivative of loss with respect to kernel weights','Calculating the derivative of kernels with respect to bias','Calculating the derivative of input with respect to loss'],a:1,
+    e:'The kernels are updated with the derivative of the <b>loss</b> with respect to the kernel weights, ∂Loss/∂K. Together with ∂Loss/∂B (biases) and ∂Loss/∂X (input, passed to the previous layer), these come from the derivative of the loss with respect to the layer’s output. Each parameter is then updated by gradient descent: subtract <code>learning_rate × gradient</code>.'},
+  q2:{q:'Which of the following is true about MaxPooling Layer?',letters:true,c:['MaxPooling layer does not have any trainable parameters','MaxPooling layer helps in reducing computation','In MaxPooling we take the highest pixel value inside the kernel window','All of the above'],a:3,
+    e:'All three are true. Max and average pooling perform no learning and are only used for down-sampling. Reducing the resolution of a convolutional layer’s output reduces the work (and the parameters) in later layers. And max pooling selects the maximum element from the region of the feature map covered by the window.'},
+  q3:{q:'Suppose we have a neuron with weights [-3, 2.8, -1] and bias = 0.5 input [4, 2, 2]. What will be the output, when the input [4, 2, 2] is passed to a Dense Layer and its activation function is ReLU?',letters:true,c:['-1.9','7.9','0','None of the above'],a:2,
+    e:'z = (−3)(4) + (2.8)(2) + (−1)(2) + 0.5 = −12 + 5.6 − 2 + 0.5 = −7.9. ReLU zeroes out any value below 0, and −7.9 &lt; 0, so the output is <b>0</b>.'}
+};
+const TABS={};
+
+/* ---------- small matrix helpers ---------- */
+const mk=(n,m,f)=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>f(i,j)));
+function corr(a,k){const kh=k.length,kw=k[0].length;return mk(a.length-kh+1,a[0].length-kw+1,(i,j)=>{let s=0;for(let p=0;p<kh;p++)for(let q=0;q<kw;q++)s+=a[i+p][j+q]*k[p][q];return s;});}
+const flip=k=>k.slice().reverse().map(r=>r.slice().reverse());
+function padM(a,p){return mk(a.length+2*p,a[0].length+2*p,(i,j)=>{const r=i-p,c=j-p;return r>=0&&r<a.length&&c>=0&&c<a[0].length?a[r][c]:0;});}
+const convFull=(a,k)=>corr(padM(a,k.length-1),flip(k));
+const r2=v=>Math.round(v*1e6)/1e6;
+function matHtml(m,o){o=o||{};return '<div class="mat" style="--c:'+m[0].length+(o.max?';max-width:'+o.max+'px':'')+'">'+m.map((r,i)=>r.map((v,j)=>'<div class="cell'+(o.cls?' '+o.cls(i,j,v):'')+'"'+(o.style?' style="'+o.style(i,j,v)+'"':'')+'>'+(o.fmt?o.fmt(v):r2(v))+'</div>').join('')).join('')+'</div>';}
+const heat=(m,v)=>'background:'+mix(Math.abs(v)/(m||1))+';color:'+ink(Math.abs(v)/(m||1));
+const maxAbs=m=>Math.max(1e-9,...m.flat().map(Math.abs));
+const X4=[[1,2,0,1],[3,1,2,0],[0,2,1,3],[1,0,2,1]],K3=[[1,2,0],[0,1,0],[0,0,-1]];
+
+/* ---------- correlation vs convolution ---------- */
+function wCorr(root){
+  const b=shell(root,'Valid cross-correlation vs full convolution','Step the kernel across a 4 × 4 input. “Valid” uses the kernel as is with no padding; “full” flips the kernel by 180° and zero-pads the input so every partial overlap counts.');
+  let mode='valid',step=0,all=false,timer=null;
+  const ctrl=h('<div class="ctrl"></div>');b.appendChild(ctrl);
+  seg(ctrl,[{label:'Valid cross-correlation',value:'valid'},{label:'Full convolution',value:'full'}],mode,v=>{mode=v;step=0;stop();draw();},'Operation');
+  const pan=h('<div class="cx"></div>'),bar=h('<div class="stepbar"><button type="button" class="btn ghost sm" data-a="prev">◀ Prev</button><input type="range" min="0" max="3" value="0" aria-label="Kernel position"><button type="button" class="btn ghost sm" data-a="next">Next ▶</button><button type="button" class="btn sm" data-a="play">▶ Play</button><button type="button" class="btn ghost sm" data-a="all" aria-pressed="false">Show all outputs</button></div>'),ro=h('<div class="readout" aria-live="polite"></div>');
+  b.append(pan,bar,ro);
+  const rng=$('input',bar),playB=$('[data-a=play]',bar),allB=$('[data-a=all]',bar);
+  function stop(){if(timer){clearInterval(timer);timer=null;}playB.textContent='▶ Play';}
+  function draw(){
+    const full=mode==='full',Ku=full?flip(K3):K3,A=full?padM(X4,2):X4,out=corr(A,Ku),o=out.length,last=o*o-1;step=Math.min(step,last);
+    const wr=Math.floor(step/o),wc=step%o,mx=maxAbs(out);
+    let sum=0;const prod=mk(3,3,(i,j)=>{const v=A[wr+i][wc+j]*Ku[i][j];sum+=v;return v;});
+    const inH=matHtml(A,{cls:(i,j)=>((full&&(i<2||i>5||j<2||j>5))?'pad ':'')+((i>=wr&&i<wr+3&&j>=wc&&j<wc+3)?'win':''),style:(i,j,v)=>(full&&(i<2||i>5||j<2||j>5))?'':heat(3,v)});
+    pan.innerHTML='<div class="pn pn-in"><div class="pl">Input '+A.length+'×'+A.length+(full?' (zero-padded by 2)':'')+'</div>'+inH+'</div><div class="pn"><div class="pl">Kernel'+(full?' (flipped 180°)':'')+'</div>'+matHtml(Ku,{cls:(i,j,v)=>v<0?'neg':'',style:(i,j,v)=>heat(2,v)})+'</div><div class="pn"><div class="pl">Window × kernel</div>'+matHtml(prod,{cls:(i,j,v)=>v<0?'neg':'',style:(i,j,v)=>heat(6,v)})+'<div class="sum">Σ = <b>'+sum+'</b></div></div><div class="pn"><div class="pl">Output '+o+'×'+o+'</div><div class="mat" style="--c:'+o+'">'+out.map((r,i)=>r.map((v,j)=>{const idx=i*o+j,shown=all||idx<=step;return '<div class="cell'+(idx===step?' cur':'')+(v<0&&shown?' neg':'')+'" style="'+(shown?heat(mx,v):'')+(o>4?';font-size:.62rem':'')+'">'+(shown?v:'·')+'</div>';}).join('')).join('')+'</div></div>';
+    rng.max=last;rng.value=step;
+    ro.innerHTML=(full?'Full convolution: o = n + k − 1 = 4 + 3 − 1 = <b>6</b>. The input is padded with <code>kernel_size − 1</code> = 2 zeros on every side, the kernel is flipped, then a valid cross-correlation is applied. This is the operation used for the <b>input gradient</b>.':'Valid cross-correlation: o = n − k + 1 = 4 − 3 + 1 = <b>2</b>. No padding, so the output shrinks by <code>kernel_size − 1</code>. This is the operation used in the <b>forward pass</b> and for the <b>kernel gradient</b>.')+'<br>Position <b>'+(step+1)+' of '+(last+1)+'</b>.';
+  }
+  bar.addEventListener('click',e=>{const a=e.target.dataset.a;if(!a)return;const o=(mode==='full'?6:2),last=o*o-1;
+    if(a==='prev'){stop();step=Math.max(0,step-1);draw();}
+    if(a==='next'){stop();step=Math.min(last,step+1);draw();}
+    if(a==='all'){all=!all;allB.setAttribute('aria-pressed',String(all));allB.textContent=all?'Hide unfinished outputs':'Show all outputs';draw();}
+    if(a==='play'){if(timer){stop();return;}all=false;allB.textContent='Show all outputs';if(step>=last)step=0;playB.textContent='❚❚ Pause';draw();timer=setInterval(()=>{if(step>=last){stop();return;}step++;draw();},550);}
+  });
+  rng.addEventListener('input',()=>{stop();step=+rng.value;draw();});
+  draw();
+}
+
+/* ---------- conv layer calculator ---------- */
+function wConvCalc(root){
+  const b=shell(root,'Convolutional layer calculator','Change the input shape, kernel size and number of filters to see the shapes, the He-initialization scale and the parameter count.');
+  const fields=[['C','Input channels',1],['H','Height',28],['W','Width',28],['k','Kernel size',3],['d','Depth (filters)',5]],inp={};
+  const pre=[['Lecture test: (1,28,28), 3×3, 5 filters',[1,28,28,3,5]],['Gradient check: (2,6,6), 3×3, 4 filters',[2,6,6,3,4]]];
+  const ctrl=h('<div class="ctrl"></div>'),pr=h('<div class="seg" role="group" aria-label="Presets"></div>');
+  pre.forEach(([l,v])=>{const bt=h('<button type="button" aria-pressed="false">'+l+'</button>');bt.addEventListener('click',()=>{fields.forEach((f,i)=>{inp[f[0]].value=v[i];});upd();});pr.appendChild(bt);});
+  ctrl.appendChild(pr);b.appendChild(ctrl);
+  const fl=h('<div class="ctrl"></div>');fields.forEach(([k,l,d])=>{const el=h('<input type="number" min="1" max="512" value="'+d+'">');inp[k]=el;const lab=h('<label class="fld">'+l+'</label>');lab.appendChild(el);fl.appendChild(lab);el.addEventListener('input',upd);});
+  b.appendChild(fl);
+  const out=h('<div class="duo"></div>');b.appendChild(out);
+  function upd(){
+    const g=k=>Math.max(1,parseInt(inp[k].value,10)||1),C=g('C'),H=g('H'),W=g('W'),k=g('k'),d=g('d');
+    if(k>H||k>W){out.innerHTML='<div class="card"><p>The kernel is larger than the input: no valid output.</p></div>';return;}
+    const fan=C*k*k,oh=H-k+1,ow=W-k+1;
+    out.innerHTML='<div class="card"><h4>Shapes</h4><p>Output: <code>(depth, H − k + 1, W − k + 1)</code> = <b>('+d+', '+oh+', '+ow+')</b></p><p>Kernels: <code>(depth, input_depth, k, k)</code> = <b>('+d+', '+C+', '+k+', '+k+')</b></p><p>Biases: one per filter = <b>'+d+'</b></p></div><div class="card dark"><h4>Initialization and cost</h4><p>fan_in = '+C+' × '+k+' × '+k+' = <b>'+fan+'</b></p><p>He scale √(2 / fan_in) = <b>'+Math.sqrt(2/fan).toFixed(4)+'</b></p><p>Learnable parameters: '+d+' × '+C+' × '+k+' × '+k+' + '+d+' = <b>'+fmt(d*fan+d)+'</b></p><p>Cross-correlations per forward pass: '+d+' × '+C+' = <b>'+d*C+'</b></p></div>';
+  }
+  upd();
+}
+
+/* ---------- backward pass + gradient check ---------- */
+function wBack(root){
+  const b=shell(root,'Convolution backward pass, with a gradient check','Pick the gradient arriving from the next layer (∂L/∂Y). The three gradients are computed with the lecture’s formulas, then checked numerically.');
+  let G=[[1,-1],[2,0.5]],bias=0.5;
+  const ctrl=h('<div class="ctrl"><span class="note">∂L/∂Y (2 × 2):</span></div>');b.appendChild(ctrl);
+  const gi=[];G.forEach((r,i)=>r.forEach((v,j)=>{const el=h('<input type="number" step="0.5" value="'+v+'" aria-label="Output gradient row '+(i+1)+' column '+(j+1)+'">');gi.push(el);ctrl.appendChild(el);el.addEventListener('input',()=>{G[i][j]=parseFloat(el.value)||0;draw();});}));
+  const grid=h('<div class="duo"></div>'),ro=h('<div class="readout" aria-live="polite"></div>');b.append(grid,ro);
+  const sum=m=>m.flat().reduce((a,x)=>a+x,0);
+  const loss=(X,K,bb)=>{const Y=corr(X,K);return sum(mk(2,2,(i,j)=>G[i][j]*(Y[i][j]+bb)));};
+  function draw(){
+    const Y=corr(X4,K3).map(r=>r.map(v=>v+bias)),dK=corr(X4,G),db=sum(G),dX=convFull(G,K3);
+    const e=1e-4;let eK=0,eX=0;
+    for(let p=0;p<3;p++)for(let q=0;q<3;q++){const kp=K3.map(r=>r.slice()),km=K3.map(r=>r.slice());kp[p][q]+=e;km[p][q]-=e;eK=Math.max(eK,Math.abs((loss(X4,kp,bias)-loss(X4,km,bias))/(2*e)-dK[p][q]));}
+    for(let p=0;p<4;p++)for(let q=0;q<4;q++){const xp=X4.map(r=>r.slice()),xm=X4.map(r=>r.slice());xp[p][q]+=e;xm[p][q]-=e;eX=Math.max(eX,Math.abs((loss(xp,K3,bias)-loss(xm,K3,bias))/(2*e)-dX[p][q]));}
+    const eB=Math.abs((loss(X4,K3,bias+e)-loss(X4,K3,bias-e))/(2*e)-db);
+    const card=(t,m,cap)=>'<div class="card"><h4>'+t+'</h4>'+matHtml(m,{max:170,cls:(i,j,v)=>v<0?'neg':'',style:(i,j,v)=>heat(maxAbs(m),v)})+'<p class="note">'+cap+'</p></div>';
+    grid.innerHTML=card('Input X (4×4)',X4,'fixed example')+card('Kernel K (3×3)',K3,'fixed example, bias 0.5')+card('∂L/∂K (3×3)',dK,'valid cross-correlation of the input with ∂L/∂Y')+card('∂L/∂X (4×4)',dX,'full convolution of ∂L/∂Y with the kernel')+'<div class="card"><h4>∂L/∂B</h4><p style="font-size:1.6rem;font-family:Georgia,serif;margin:.3rem 0"><b>'+r2(db)+'</b></p><p class="note">sum of the output gradient over all positions (one scalar bias per filter)</p></div>';
+    const ok=v=>v<1e-5;
+    ro.innerHTML='<b>Gradient check</b> (central differences of L = Σ ∂L/∂Y · Y, step 1e-4):<br>dL/dX matches: <b>'+ok(eX)+'</b> · dL/dK matches: <b>'+ok(eK)+'</b> · dL/dB matches: <b>'+ok(eB)+'</b><br><span class="note">Largest difference: '+Math.max(eX,eK,eB).toExponential(1)+'. In the lecture the same check compares against PyTorch autograd on <code>F.conv2d</code>, using <code>learning_rate=1</code> so the parameter change equals the gradient.</span>';
+  }
+  draw();
+}
+
+/* ---------- activations ---------- */
+function wAct(root){
+  const b=shell(root,'Activation functions: forward and backward','For every activation the backward pass multiplies the incoming gradient element-wise by f′(x), evaluated at the layer’s input (Softmax is the exception: it uses its Jacobian).');
+  let mode='relu',x=1.2,g=1,z=[2,0.5],c=0,gs=[1,-1];
+  const ctrl=h('<div class="ctrl"></div>');b.appendChild(ctrl);
+  seg(ctrl,[{label:'ReLU',value:'relu'},{label:'TanH',value:'tanh'},{label:'Softmax',value:'soft'}],mode,v=>{mode=v;draw();},'Activation');
+  const body=h('<div></div>');b.appendChild(body);
+  const f={relu:v=>v>0?v:0,tanh:Math.tanh},fp={relu:v=>v<=0?0:1,tanh:v=>1-Math.tanh(v)**2};
+  const sl=(id,l,min,max,st,val)=>'<label class="fld">'+l+' <span class="zv" data-o="'+id+'"></span><input type="range" data-s="'+id+'" min="'+min+'" max="'+max+'" step="'+st+'" value="'+val+'" aria-label="'+l+'"></label>';
+  function draw(){
+    if(mode!=='soft'){
+      const xs=Array.from({length:81},(_,i)=>-4+i*0.1),yr=mode==='relu'?[-0.5,4]:[-1.5,1.5];
+      const S=mode==='relu'?[{n:'f(x) = max(0, x)',pts:xs.map(v=>[v,f.relu(v)]),c:'#2e1065',d:''},{n:'f′(x) (0 for x ≤ 0, else 1)',pts:xs.filter(v=>v<=0).map(v=>[v,0]),c:'#8b5cf6',d:'7 5'},{n:'',pts:xs.filter(v=>v>0).map(v=>[v,1]),c:'#8b5cf6',d:'7 5'}]:[{n:'f(x) = tanh(x)',pts:xs.map(v=>[v,Math.tanh(v)]),c:'#2e1065',d:''},{n:'f′(x) = 1 − tanh²(x)',pts:xs.map(v=>[v,fp.tanh(v)]),c:'#8b5cf6',d:'7 5'}];
+      body.innerHTML='<div class="legend">'+legendHtml(S.filter(s=>s.n))+'</div><div class="plot" id="actplot"></div><div class="ctrl">'+sl('x','Layer input x',-4,4,0.1,x)+sl('g','Incoming gradient ∂L/∂y',-2,2,0.1,g)+'</div><div class="readout" aria-live="polite"></div>';
+      $('#actplot',body).innerHTML=chart({W:640,H:260,x:[-4,4],y:yr,xt:[-4,-2,0,2,4],yt:mode==='relu'?[0,1,2,3,4]:[-1,-0.5,0,0.5,1],yf:v=>Number(v.toFixed(1)),xlabel:'x',label:mode+' and its derivative',series:S,vl:[{x:0,c:'#c4b5fd',d:'',w:1.2}],dots:[{x,y:f[mode](x),c:'#2e1065'},{x,y:fp[mode](x),c:'#8b5cf6'}]});
+      $('[data-o=x]',body).textContent=x.toFixed(1);$('[data-o=g]',body).textContent=g.toFixed(1);
+      $('.readout',body).innerHTML='x = <b>'+x.toFixed(1)+'</b> → forward: f(x) = <b>'+f[mode](x).toFixed(3)+'</b>; f′(x) = <b>'+fp[mode](x).toFixed(3)+'</b>. Backward: ∂L/∂x = ∂L/∂y · f′(x) = '+g.toFixed(1)+' × '+fp[mode](x).toFixed(3)+' = <b>'+(g*fp[mode](x)).toFixed(3)+'</b>.'+(mode==='relu'?'<br>ReLU zeroes every negative input and passes the rest through. The derivative at 0 is not defined, so it is set to 0 (the code uses <code>x &lt;= 0 → 0</code>).':'<br>TanH squashes any input into (−1, 1); the greater the input, the closer the output is to 1.');
+    }else{
+      const m=Math.max(z[0],z[1]),e=z.map(v=>Math.exp(v-m)),s=e[0]+e[1],y=e.map(v=>v/s),J=[[y[0]*(1-y[0]),-y[0]*y[1]],[-y[1]*y[0],y[1]*(1-y[1])]],bw=[J[0][0]*gs[0]+J[0][1]*gs[1],J[1][0]*gs[0]+J[1][1]*gs[1]];
+      const naive=z.map(v=>Math.exp(v+c)),over=v=>Math.fround(v)===Infinity;
+      body.innerHTML='<div class="ctrl">'+sl('z0','Logit z₀ (digit 0)',-5,5,0.1,z[0])+sl('z1','Logit z₁ (digit 1)',-5,5,0.1,z[1])+sl('c','Add a constant to both logits',0,120,5,c)+'</div><div class="bars">'+y.map((v,i)=>'<div class="brow"><span class="bl">y'+i+' (digit '+i+')</span><span class="bt"><span class="bf" style="width:'+(v*100)+'%"></span></span><span class="bv">'+(v*100).toFixed(1)+'%</span></div>').join('')+'</div><div class="readout">Outputs sum to <b>'+(y[0]+y[1]).toFixed(3)+'</b>. Naive exp(z + c): '+naive.map(v=>over(v)?'<b>inf</b> (overflows in float32)':v.toExponential(1)).join(', ')+'. Subtracting max(z) first gives exactly the same probabilities without overflow.</div><div class="ctrl" style="margin-top:12px">'+sl('g0','Incoming gradient ∂L/∂y₀',-2,2,0.1,gs[0])+sl('g1','Incoming gradient ∂L/∂y₁',-2,2,0.1,gs[1])+'</div><div class="duo"><div><div class="pl">Jacobian ∂y<sub>i</sub>/∂z<sub>j</sub> = y<sub>i</sub>(δ<sub>ij</sub> − y<sub>j</sub>), i.e. diag(y) − y·yᵀ</div>'+matHtml(J,{max:180,cls:(i,j,v)=>v<0?'neg':'',style:(i,j,v)=>heat(0.25,v),fmt:v=>v.toFixed(3)})+'</div><div class="readout" aria-live="polite">Backward: ∂L/∂z = J · ∂L/∂y = [<b>'+bw.map(v=>v.toFixed(3)).join(', ')+'</b>]</div></div>';
+      ['z0','z1','c','g0','g1'].forEach(id=>{$('[data-o='+id+']',body).textContent=id==='z0'?z[0].toFixed(1):id==='z1'?z[1].toFixed(1):id==='c'?c:id==='g0'?gs[0].toFixed(1):gs[1].toFixed(1);});
+    }
+  }
+  body.addEventListener('input',e=>{const id=e.target.dataset.s;if(!id)return;const v=+e.target.value;if(id==='x')x=v;if(id==='g')g=v;if(id==='z0')z[0]=v;if(id==='z1')z[1]=v;if(id==='c')c=v;if(id==='g0')gs[0]=v;if(id==='g1')gs[1]=v;const keep=document.activeElement&&document.activeElement.dataset?document.activeElement.dataset.s:null;draw();if(keep){const el=$('[data-s='+keep+']',body);if(el)el.focus();}});
+  draw();
+}
+
+/* ---------- max pooling ---------- */
+function wPool(root){
+  const b=shell(root,'Max pooling: forward and backward','A 5 × 5 map as it looks after ReLU (lots of zeros, so ties are common). Select an output cell: its window and the winning input are marked. The backward pass sends each output gradient (here 1) only to the winner, and adds when windows overlap.');
+  const A=[[0,3,0,1,0],[2,2,0,0,4],[0,5,1,1,0],[1,0,0,2,0],[0,0,3,0,1]];let s=1,sel=0;
+  const ctrl=h('<div class="ctrl"><span class="note">Window 2 × 2, stride</span></div>');b.appendChild(ctrl);
+  seg(ctrl,[{label:'1',value:1},{label:'2',value:2}],s,v=>{s=v;sel=0;draw();},'Stride');
+  const duo=h('<div class="cx" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"></div>'),ro=h('<div class="readout" aria-live="polite"></div>');b.append(duo,ro);
+  function draw(){
+    const o=Math.floor((5-2)/s)+1,win=[],dx=mk(5,5,()=>0),out=mk(o,o,(i,j)=>{let best=-Infinity,bp=0;for(let p=0;p<4;p++){const v=A[i*s+Math.floor(p/2)][j*s+p%2];if(v>best){best=v;bp=p;}}const w=[i*s+Math.floor(bp/2),j*s+bp%2];win.push(w);dx[w[0]][w[1]]+=1;return best;});
+    sel=Math.min(sel,o*o-1);const si=Math.floor(sel/o),sj=sel%o,w=win[sel];
+    const ties=[];for(let p=0;p<4;p++){ties.push(A[si*s+Math.floor(p/2)][sj*s+p%2]);}
+    duo.innerHTML='<div class="pn"><div class="pl">Input (5×5)</div>'+matHtml(A,{cls:(i,j)=>(i>=si*s&&i<si*s+2&&j>=sj*s&&j<sj*s+2?'win ':'')+(i===w[0]&&j===w[1]?'on':''),style:(i,j,v)=>(i===w[0]&&j===w[1])?'':heat(5,v)})+'</div><div class="pn"><div class="pl">Output ('+o+'×'+o+')</div><div class="mat" style="--c:'+o+'">'+out.map((r,i)=>r.map((v,j)=>'<button type="button" class="cell'+(i*o+j===sel?' sel':'')+'" data-i="'+(i*o+j)+'" aria-label="Output cell row '+(i+1)+' column '+(j+1)+', value '+v+'" style="'+heat(5,v)+'">'+v+'</button>').join('')).join('')+'</div></div><div class="pn"><div class="pl">Gradient sent back (each output gradient = 1)</div>'+matHtml(dx,{cls:(i,j,v)=>v>1?'on':'',style:(i,j,v)=>v>1?'':heat(3,v)})+'</div>';
+    const mx=Math.max(...ties),nt=ties.filter(v=>v===mx).length;
+    ro.innerHTML='Output size o = ⌊(n − k)/s⌋ + 1 = ⌊(5 − 2)/'+s+'⌋ + 1 = <b>'+o+'</b>. Window values: <b>'+ties.join(', ')+'</b> → max <b>'+mx+'</b> at window position <b>'+w.map(v=>v+1).join(', ')+'</b> (row, column).'+(nt>1?' <b>'+nt+' values tie</b>: the gradient goes to just one of them (the first), as PyTorch does, otherwise it would be counted several times.':'')+(dx.flat().some(v=>v>1)?'<br>Filled input cells receive gradient from more than one window: with stride < kernel size the windows overlap, so gradients are <b>added</b>.':'<br>Every other input cell gets 0.');
+  }
+  duo.addEventListener('click',e=>{const c=e.target.closest('[data-i]');if(!c)return;sel=+c.dataset.i;draw();const n=$('[data-i="'+sel+'"]',duo);if(n)n.focus();});
+  draw();
+}
+
+/* ---------- dense neuron ---------- */
+function wNeuron(root){
+  const b=shell(root,'One Dense neuron, forward and backward','Edit the weights, inputs and bias (the defaults are the numbers from the quiz below). ReLU is applied after the Dense layer.');
+  let w=[-3,2.8,-1],x=[4,2,2],bi=0.5,dy=1;
+  const ctrl=h('<div class="ctrl"></div>');b.appendChild(ctrl);
+  const mkIn=(arr,i,l)=>{const el=h('<label class="fld">'+l+'<input type="number" step="0.1" value="'+arr[i]+'"></label>');$('input',el).addEventListener('input',e=>{arr[i]=parseFloat(e.target.value)||0;draw();});ctrl.appendChild(el);};
+  w.forEach((_,i)=>mkIn(w,i,'w'+(i+1)));x.forEach((_,i)=>mkIn(x,i,'x'+(i+1)));
+  const bl=h('<label class="fld">bias<input type="number" step="0.1" value="0.5"></label>');$('input',bl).addEventListener('input',e=>{bi=parseFloat(e.target.value)||0;draw();});ctrl.appendChild(bl);
+  const sl=h('<div class="ctrl"><label class="fld">Output gradient ∂L/∂z <span class="zv" data-o="g"></span><input type="range" min="-2" max="2" step="0.1" value="1" aria-label="Output gradient"></label></div>'),ro=h('<div class="readout" aria-live="polite"></div>');b.append(sl,ro);
+  $('input',sl).addEventListener('input',e=>{dy=+e.target.value;draw();});
+  function draw(){
+    $('[data-o=g]',sl).textContent=dy.toFixed(1);
+    const terms=w.map((v,i)=>v*x[i]),z=terms.reduce((a,v)=>a+v,0)+bi;
+    ro.innerHTML='<b>Forward:</b> z = '+w.map((v,i)=>'('+v+')('+x[i]+')').join(' + ')+' + '+bi+' = '+terms.map(r2).join(' + ').replace(/\+ -/g,'− ')+' + '+bi+' = <b>'+r2(z)+'</b> → ReLU(z) = <b>'+r2(Math.max(0,z))+'</b><br><b>Backward</b> (for the Dense layer itself, with ∂L/∂z = '+dy.toFixed(1)+'): ∂L/∂W = ∂L/∂z · xᵀ = <b>['+x.map(v=>r2(dy*v)).join(', ')+']</b> · ∂L/∂X = Wᵀ · ∂L/∂z = <b>['+w.map(v=>r2(dy*v)).join(', ')+']</b> (uses the old weights) · ∂L/∂b = <b>'+dy.toFixed(1)+'</b>';
+  }
+  draw();
+}
+
+/* ---------- log loss ---------- */
+function wLoss(root){
+  const b=shell(root,'Log loss on the two softmax outputs','Set how much probability the network gives the correct digit. The loss is the mean of the binary log loss over both outputs; predictions are clipped to [ε, 1 − ε] with ε = 1e-7 so log(0) never appears.');
+  let p=0.7,truth=0;const EPS=1e-7;
+  const ctrl=h('<div class="ctrl"><span class="note">True digit:</span></div>');b.appendChild(ctrl);
+  seg(ctrl,[{label:'0',value:0},{label:'1',value:1}],truth,v=>{truth=v;draw();},'True digit');
+  const sl=h('<label class="fld">Probability given to the correct digit <span class="zv" data-o="p"></span><input type="range" min="0" max="1" step="0.01" value="0.7" aria-label="Probability of the correct digit"></label>');ctrl.appendChild(sl);
+  const plot=h('<div class="plot"></div>'),ro=h('<div class="readout" aria-live="polite"></div>');b.append(plot,ro);
+  const cl=v=>Math.min(1-EPS,Math.max(EPS,v));
+  function draw(){
+    $('[data-o=p]',sl).textContent=p.toFixed(2);
+    const yt=truth===0?[1,0]:[0,1],yp=truth===0?[p,1-p]:[1-p,p],pc=yp.map(cl),bce=pc.map((v,i)=>-yt[i]*Math.log(v)-(1-yt[i])*Math.log(1-v)),L=(bce[0]+bce[1])/2,gr=pc.map((v,i)=>((1-yt[i])/(1-v)-yt[i]/v)/2);
+    const xs=Array.from({length:100},(_,i)=>0.01+i*0.01).concat([0.999]);
+    plot.innerHTML=chart({W:640,H:270,x:[0,1],y:[0,8],xt:[0,0.25,0.5,0.75,1],yt:[0,2,4,6,8],xlabel:'probability of the correct digit',ylabel:'loss',label:'Loss as a function of the probability given to the correct digit',series:[{n:'loss',pts:xs.map(v=>[v,-Math.log(cl(v))]),c:'#2e1065',d:''}],dots:[{x:p,y:Math.min(8,-Math.log(cl(p))),c:'#8b5cf6'}]});
+    ro.innerHTML='Network output y = ['+yp.map(v=>v.toFixed(2)).join(', ')+'], target = ['+yt.join(', ')+'].<br>Loss = <b>'+L.toFixed(4)+'</b> (the more the prediction diverges from the truth, the higher the loss).<br>Derivative that starts the backward pass: ((1 − y_true)/(1 − y_pred) − y_true/y_pred) / N, with N = 2 → <b>['+gr.map(v=>v.toFixed(3)).join(', ')+']</b>'+(p===0||p===1?'<br>At the extremes the clipping keeps the loss finite ('+L.toFixed(2)+') instead of <b>inf</b>.':'');
+  }
+  sl.querySelector('input').addEventListener('input',e=>{p=+e.target.value;draw();});
+  draw();
+}
+
+/* ---------- data preparation ---------- */
+function wPrep(root){
+  const b=shell(root,'From raw MNIST to network input','Switch between the train and test sets to see how the data is filtered and reshaped. Labels become one-hot column vectors.');
+  let split='train',digit=0;
+  const ctrl=h('<div class="ctrl"></div>');b.appendChild(ctrl);
+  seg(ctrl,[{label:'Train',value:'train'},{label:'Test',value:'test'}],split,v=>{split=v;draw();},'Split');
+  ctrl.appendChild(h('<span class="note">One-hot label for digit</span>'));
+  seg(ctrl,[{label:'0',value:0},{label:'1',value:1}],digit,v=>{digit=v;draw();},'Digit');
+  const ol=h('<ol class="lsteps"></ol>'),ro=h('<div class="readout" aria-live="polite"></div>');b.append(ol,ro);
+  function draw(){
+    const tr=split==='train',lim=tr?1000:200,raw=tr?'60,000':'10,000',n=lim*2;
+    ol.innerHTML=[['Load MNIST','<code>('+raw+', 28, 28)</code> images, pixel values 0–255'],['Keep digits 0 and 1 only, up to <code>limit</code> = '+fmt(lim)+' images per digit','a subset, so the from-scratch network is fast enough'],['Shuffle','<code>torch.randperm</code> on the '+fmt(n)+' selected images'],['Reshape and scale','<code>('+fmt(n)+', 1, 28, 28)</code>, pixels ÷ 255 into [0, 1]'],['One-hot labels','<code>('+fmt(n)+', 2, 1)</code>, one column vector per image']].map(s=>'<li><span><b>'+s[0]+'</b> — '+s[1]+'</span></li>').join('');
+    ro.innerHTML='Result: <b>'+fmt(n)+'</b> '+split+' images. Digit <b>'+digit+'</b> → label <code>['+(digit===0?'[1], [0]':'[0], [1]')+']</code>, shape (2, 1).';
+  }
+  draw();
+}
+
+/* ---------- the network ---------- */
+const NET=[
+  {n:'Convolutional',a:'Conv 5 filters, 3×3',i:'(1, 28, 28)',o:'(5, 26, 26)',p:50,f:'Y[i] = B[i] + Σ_j X[j] ⋆ K[i, j] (valid cross-correlation)',bk:'∂L/∂K and ∂L/∂B update the kernels and biases; ∂L/∂X = full convolution of ∂L/∂Y with the kernels',c:'5 × (1 × 3 × 3) + 5 = 50 (computed)'},
+  {n:'ReLU',a:'ReLU',i:'(5, 26, 26)',o:'(5, 26, 26)',p:0,f:'max(0, x)',bk:'∂L/∂y × f′(x), where f′(x) is 0 for x ≤ 0 and 1 otherwise',c:'No parameters.'},
+  {n:'MaxPool',a:'MaxPool 2×2, stride 1',i:'(5, 26, 26)',o:'(5, 25, 25)',p:0,f:'maximum of each 2 × 2 window; remembers the winner (argmax)',bk:'route each output gradient to its winner, adding where windows overlap; everything else is 0',c:'No parameters.'},
+  {n:'Reshape',a:'Reshape',i:'(5, 25, 25)',o:'(3125, 1)',p:0,f:'torch.reshape to a column vector',bk:'reshape the gradient back to (5, 25, 25)',c:'No parameters.'},
+  {n:'Dense',a:'Dense 3125 → 100',i:'(3125, 1)',o:'(100, 1)',p:312600,f:'Z = W·X + b',bk:'dW = dY·Xᵀ, dX = Wᵀ·dY (old weights), db = dY',c:'3,125 × 100 + 100 = 312,600 (computed)'},
+  {n:'TanH',a:'TanH',i:'(100, 1)',o:'(100, 1)',p:0,f:'tanh(x), output in (−1, 1)',bk:'∂L/∂y × (1 − tanh²(x))',c:'No parameters.'},
+  {n:'Dense',a:'Dense 100 → 2',i:'(100, 1)',o:'(2, 1)',p:202,f:'Z = W·X + b',bk:'dW = dY·Xᵀ, dX = Wᵀ·dY, db = dY',c:'100 × 2 + 2 = 202 (computed)'},
+  {n:'Softmax',a:'Softmax',i:'(2, 1)',o:'(2, 1)',p:0,f:'exp(z − max z) / Σ exp(z − max z): probabilities that sum to 1',bk:'Jacobian: dy_i/dz_j = y_i(δ_ij − y_j)',c:'No parameters.'}
+];
+function wNet(root){
+  const b=shell(root,'The network, layer by layer','Select a layer to see its shapes, what it computes forward, and what it does backward. Output shape of every layer equals the input shape of the next one.');
+  let sel=0;
+  const flow=h('<div class="flow" style="gap:6px"></div>'),mx=h('<div class="mx"><ul class="layers"></ul><div class="ldetail" aria-live="polite"></div></div>');b.append(flow,mx);
+  const ul=$('.layers',mx),dt=$('.ldetail',mx),tot=NET.reduce((a,l)=>a+l.p,0),mp=Math.max(...NET.map(l=>l.p));
+  function draw(){
+    flow.innerHTML='<span>Input (1,28,28)</span>'+NET.map((l,i)=>'<i>→</i><span style="'+(i===sel?'background:var(--v900);color:#fff;border-color:var(--v900)':'')+'">'+l.o+'</span>').join('');
+    ul.innerHTML=NET.map((l,i)=>'<li><button type="button" class="lay" data-i="'+i+'" aria-pressed="'+(i===sel)+'"><span class="ln">'+(i+1)+'. '+l.a+'</span><span class="ls">'+l.o+'</span><span class="lp">'+(l.p?fmt(l.p):'—')+'</span><span class="lb"><i style="width:'+(l.p/mp*100)+'%"></i></span></button></li>').join('');
+    const l=NET[sel];
+    dt.innerHTML='<h4>'+l.a+'</h4><p>Forward: <code>'+l.i+'</code> → <code>'+l.o+'</code></p><p>'+l.f+'</p><p><b>Backward:</b> receives ∂L/∂output, returns ∂L/∂input of shape <code>'+l.i+'</code>. '+l.bk+'.</p><p>Parameters: <code>'+(l.p?fmt(l.p):'0')+'</code> · '+l.c+'</p><p style="border-top:1px solid rgba(255,255,255,.2);padding-top:8px;margin-top:10px">Whole network: <b>'+fmt(tot)+'</b> parameters (computed from the layer sizes).</p>';
+  }
+  mx.addEventListener('click',e=>{const t=e.target.closest('[data-i]');if(!t)return;sel=+t.dataset.i;draw();$('[data-i="'+sel+'"]',ul).focus();});
+  draw();
+}
+
+/* ---------- one training step ---------- */
+function wStep(root){
+  const b=shell(root,'One training step, forward then backward','Walk through what the <code>train</code> function does for one image: forward through every layer, the loss, then back through the layers in reverse order.');
+  let st=0,timer=null;const total=NET.length*2+2;
+  const flow=h('<div class="flow" style="gap:6px"></div>'),bar=h('<div class="stepbar"><button type="button" class="btn ghost sm" data-a="prev">◀ Prev</button><input type="range" min="0" max="'+(total-1)+'" value="0" aria-label="Stage"><button type="button" class="btn ghost sm" data-a="next">Next ▶</button><button type="button" class="btn sm" data-a="play">▶ Play</button></div>'),ro=h('<div class="readout" aria-live="polite"></div>');
+  b.append(flow,bar,ro);
+  const rng=$('input',bar),playB=$('[data-a=play]',bar);
+  function stop(){if(timer){clearInterval(timer);timer=null;}playB.textContent='▶ Play';}
+  function draw(){
+    const n=NET.length;let act=-1,phase;
+    if(st===0)phase='in';else if(st<=n){act=st-1;phase='fwd';}else if(st===n+1)phase='loss';else{act=n-1-(st-n-2);phase='bwd';}
+    flow.innerHTML='<span style="'+(phase==='in'?'background:var(--v900);color:#fff;border-color:var(--v900)':'')+'">Image</span>'+NET.map((l,i)=>'<i>'+(phase==='bwd'?'←':'→')+'</i><span style="'+(i===act?'background:var(--v900);color:#fff;border-color:var(--v900)':'')+'">'+l.n+'</span>').join('')+'<i>→</i><span style="'+(phase==='loss'?'background:var(--v900);color:#fff;border-color:var(--v900)':'')+'">Loss</span>';
+    rng.value=st;
+    if(phase==='in')ro.innerHTML='<b>1 · Forward pass.</b> A <code>(1, 28, 28)</code> image enters <code>predict()</code>.';
+    else if(phase==='fwd'){const l=NET[act];ro.innerHTML='<b>1 · Forward, layer '+(act+1)+' of '+n+': '+l.a+'.</b> <code>'+l.i+'</code> → <code>'+l.o+'</code>. '+l.f+'.';}
+    else if(phase==='loss')ro.innerHTML='<b>2 · Loss.</b> The softmax output <code>(2, 1)</code> is compared with the one-hot label using log loss; <code>log_loss_prime</code> gives the gradient that starts the backward pass. The running error and number of correct predictions are updated.';
+    else{const l=NET[act];ro.innerHTML='<b>3 · Backward, layer '+(act+1)+': '+l.a+'.</b> Gradient in, gradient of shape <code>'+l.i+'</code> out. '+l.bk+'.'+(l.p?' The layer updates its own parameters: <code>parameter −= learning_rate × gradient</code>.':'');}
+  }
+  bar.addEventListener('click',e=>{const a=e.target.dataset.a;if(!a)return;
+    if(a==='prev'){stop();st=Math.max(0,st-1);draw();}
+    if(a==='next'){stop();st=Math.min(total-1,st+1);draw();}
+    if(a==='play'){if(timer){stop();return;}if(st>=total-1)st=0;playB.textContent='❚❚ Pause';draw();timer=setInterval(()=>{if(st>=total-1){stop();return;}st++;draw();},800);}});
+  rng.addEventListener('input',()=>{stop();st=+rng.value;draw();});
+  draw();
+}
+
+/* ---------- training log ---------- */
+function wTrain(root){
+  const b=shell(root,'Training log: 5 epochs','Learning rate 0.01, 2,000 training images. Hover the chart (or use ← → on it) to read each epoch.');
+  const loss=[0.0122,0.0027,0.0018,0.0007,0.0014],acc=[99.60,99.95,99.95,100.00,99.95],tm=[6,7,6,6,6];
+  let metric='loss',idx=4;
+  const ctrl=h('<div class="ctrl"></div>');b.appendChild(ctrl);
+  seg(ctrl,[{label:'Loss',value:'loss'},{label:'Training accuracy',value:'acc'}],metric,v=>{metric=v;draw();},'Metric');
+  const plot=h('<div class="plot" tabindex="0" role="group" aria-label="Training chart. Use left and right arrow keys to change epoch."></div>'),ro=h('<div class="readout" aria-live="polite"></div>');
+  b.append(plot,ro);
+  b.appendChild(h('<div class="cmp"><div class="stat"><div class="k">Test accuracy</div><div class="v">100.00%</div><div class="s">400 of 400 test images correct</div></div></div>'));
+  const W=640,M={l:60,r:16,t:16,b:40};
+  function draw(){
+    const L=metric==='loss',v=L?loss:acc,y=L?[0,0.014]:[99,100.2];
+    plot.innerHTML=chart({W,H:260,M,x:[1,5],y,xt:[1,2,3,4,5],yt:L?[0,0.004,0.008,0.012]:[99,99.5,100],yf:t=>L?t.toFixed(3):t.toFixed(1)+'%',xlabel:'Epoch',label:(L?'Average loss':'Training accuracy')+' per epoch',series:[{n:'',pts:v.map((q,i)=>[i+1,q]),c:'#2e1065',d:'',m:'c'}],cur:idx+1});
+    ro.innerHTML='<b>Epoch '+(idx+1)+'/5</b> — loss <b>'+loss[idx].toFixed(4)+'</b> · training accuracy <b>'+acc[idx].toFixed(2)+'%</b> · time <b>'+tm[idx]+' s</b>';
+  }
+  function at(e){const r=plot.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W;idx=Math.max(0,Math.min(4,Math.round(1+(x-M.l)/(W-M.l-M.r)*4)-1));draw();}
+  plot.addEventListener('pointermove',at);plot.addEventListener('pointerdown',at);
+  plot.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){idx=Math.min(4,idx+1);draw();e.preventDefault();}else if(e.key==='ArrowLeft'){idx=Math.max(0,idx-1);draw();e.preventDefault();}});
+  draw();
+}
+
+/* ---------- mount ---------- */
+function fillCode(){$$('[data-code]').forEach(el=>{el.textContent=CODE[el.dataset.code]||'';});}
+const W={corr:wCorr,convcalc:wConvCalc,back:wBack,act:wAct,pool:wPool,neuron:wNeuron,loss:wLoss,prep:wPrep,net:wNet,step:wStep,train:wTrain};
+function init(){
+  $$('[data-fig]').forEach(el=>{el.innerHTML=el.dataset.fig.split(',').map(k=>FIGS[k]||'').join('');});
+  fillCode();
+  $$('[data-w]').forEach(el=>{const k=el.dataset.w;if(k==='quiz'){wQuiz(el,el.dataset.q);return;}if(W[k])W[k](el,el.dataset.arg);});
+  wToc();
+}
+const CODE={"setup": "import random\nimport time\nimport torch\nimport torch.nn.functional as F\nimport matplotlib.pyplot as plt\nfrom torchvision import datasets\n\ntorch.manual_seed(0)\nrandom.seed(0)", "layer": "class Layer:\n    def __init__(self):\n        self.input = None\n        self.output = None\n\n    def forward(self, input):\n        raise NotImplementedError\n\n    def backward(self, output_gradient, learning_rate):\n        raise NotImplementedError", "loop": "def correlate2d_valid_loop(a, k):\n    kh, kw = k.shape\n    oh, ow = a.shape[0] - kh + 1, a.shape[1] - kw + 1\n    out = torch.zeros((oh, ow))\n    for i in range(oh):\n        for j in range(ow):\n            out[i, j] = torch.sum(a[i:i + kh, j:j + kw] * k)\n    return out", "fast": "def correlate2d_valid(a, k):\n    kh, kw = k.shape\n    windows = a.unfold(0, kh, 1).unfold(1, kw, 1)      # (out_h, out_w, kh, kw): every window of the image\n    return (windows * k).sum(dim=(-2, -1))             # multiply by the kernel and sum, for all windows at once\n\n# Sanity check: both versions agree\na, k = torch.rand(8, 8), torch.randn(3, 3)\nprint(\"Fast == loop version:\", torch.allclose(correlate2d_valid(a, k), correlate2d_valid_loop(a, k), atol=1e-5))", "full": "def convolve2d_full(a, k):\n    kh, kw = k.shape\n    k_flipped = torch.flip(k, dims=(0, 1))               # rotate the kernel by 180 degrees\n    a_padded = F.pad(a, (kw - 1, kw - 1, kh - 1, kh - 1))  # pad (left, right, top, bottom)\n    return correlate2d_valid(a_padded, k_flipped)\n\nprint(\"Output of full convolution of 4x4 input with 3x3 kernel:\", convolve2d_full(torch.rand(4, 4), torch.rand(3, 3)).shape)  # 6x6", "convf": "class Convolutional(Layer):\n    def __init__(self, input_shape, kernel_size, depth):\n        input_depth, input_height, input_width = input_shape\n        self.depth = depth\n        self.input_shape = input_shape\n        self.input_depth = input_depth\n        self.output_shape = (depth, input_height - kernel_size + 1, input_width - kernel_size + 1)\n        self.kernels_shape = (depth, input_depth, kernel_size, kernel_size)\n        fan_in = input_depth * kernel_size * kernel_size\n        self.kernels = torch.randn(*self.kernels_shape) * (2.0 / fan_in) ** 0.5   # He initialization\n        self.biases = torch.zeros(depth)                                          # one bias per filter\n\n    def forward(self, input):\n        self.input = input\n        self.output = torch.zeros(self.output_shape)\n        for i in range(self.depth):                  # for every filter ...\n            for j in range(self.input_depth):        # ... and every input channel\n                self.output[i] += correlate2d_valid(self.input[j], self.kernels[i, j])\n            self.output[i] += self.biases[i]         # add the filter's bias once\n        return self.output", "convtest": "test_conv = Convolutional((1, 28, 28), 3, 5)\nprint(test_conv.forward(torch.rand(1, 28, 28)).shape)", "convb": "class Convolutional(Layer):\n    def __init__(self, input_shape, kernel_size, depth):\n        input_depth, input_height, input_width = input_shape\n        self.depth = depth\n        self.input_shape = input_shape\n        self.input_depth = input_depth\n        self.output_shape = (depth, input_height - kernel_size + 1, input_width - kernel_size + 1)\n        self.kernels_shape = (depth, input_depth, kernel_size, kernel_size)\n        fan_in = input_depth * kernel_size * kernel_size\n        self.kernels = torch.randn(*self.kernels_shape) * (2.0 / fan_in) ** 0.5   # He initialization\n        self.biases = torch.zeros(depth)                                          # one bias per filter\n\n    def forward(self, input):\n        self.input = input\n        self.output = torch.zeros(self.output_shape)\n        for i in range(self.depth):\n            for j in range(self.input_depth):\n                self.output[i] += correlate2d_valid(self.input[j], self.kernels[i, j])\n            self.output[i] += self.biases[i]\n        return self.output\n\n    def backward(self, output_gradient, learning_rate):          # NEW\n        kernels_gradient = torch.zeros(self.kernels_shape)\n        input_gradient = torch.zeros(self.input_shape)\n\n        for i in range(self.depth):\n            for j in range(self.input_depth):\n                # dL/dK[i,j]: correlate the input channel with the output gradient\n                kernels_gradient[i, j] = correlate2d_valid(self.input[j], output_gradient[i])\n                # dL/dX[j]: full convolution of the output gradient with the kernel (summed over filters)\n                input_gradient[j] += convolve2d_full(output_gradient[i], self.kernels[i, j])\n        biases_gradient = output_gradient.sum(dim=(1, 2))        # dL/dB[i]: sum over all positions\n\n        # gradient-descent update\n        self.kernels -= learning_rate * kernels_gradient\n        self.biases -= learning_rate * biases_gradient\n        return input_gradient", "gcheck": "torch.manual_seed(1)\nlayer = Convolutional((2, 6, 6), 3, 4)          # 2 input channels, 3x3 kernels, 4 filters\nx = torch.randn(2, 6, 6)\nout = layer.forward(x)\nout_grad = torch.randn_like(out)                 # pretend this came from the next layer\n\nW0, b0 = layer.kernels.clone(), layer.biases.clone()\ndx_ours = layer.backward(out_grad, learning_rate=1.0)\ndW_ours, db_ours = W0 - layer.kernels, b0 - layer.biases    # = gradients because lr = 1\n\n# the same computation with autograd\nxt, Wt, bt = x.clone().requires_grad_(), W0.clone().requires_grad_(), b0.clone().requires_grad_()\nyt = F.conv2d(xt[None], Wt, bt)[0]\nyt.backward(out_grad)\n\nprint(\"forward  matches:\", torch.allclose(out, yt.detach(), atol=1e-5))\nprint(\"dL/dX    matches:\", torch.allclose(dx_ours, xt.grad, atol=1e-5))\nprint(\"dL/dK    matches:\", torch.allclose(dW_ours, Wt.grad, atol=1e-5))\nprint(\"dL/dB    matches:\", torch.allclose(db_ours, bt.grad, atol=1e-5))", "act": "class Activation(Layer):\n    def __init__(self, activation, activation_prime):\n        self.activation = activation               # the function\n        self.activation_prime = activation_prime   # its derivative, needed for backpropagation\n\n    def forward(self, input):\n        self.input = input\n        return self.activation(self.input)\n\n    def backward(self, output_gradient, learning_rate):\n        # chain rule: dL/dx = dL/dy * f'(x)   (element-wise, no parameters to update)\n        return output_gradient * self.activation_prime(self.input)", "relu": "def relu_prime(x):\n   return torch.where(x <= 0, torch.zeros_like(x), torch.ones_like(x))\n\nclass ReLU(Activation):\n    def __init__(self):\n        def relu(x):\n            return torch.where(x > 0, x, torch.zeros_like(x))\n\n        def relu_prime(x):\n            return torch.where(x <= 0, torch.zeros_like(x), torch.ones_like(x))\n\n        super().__init__(relu, relu_prime)", "tanh": "class TanH(Activation):\n    def __init__(self):\n        def tanh(x):\n            return torch.tanh(x)\n\n        def tanh_prime(x):\n            return 1 - torch.tanh(x) ** 2\n\n        super().__init__(tanh, tanh_prime)", "softmax": "class Softmax(Layer):\n    def forward(self, input):\n        tmp = torch.exp(input - torch.max(input))       # subtract the max for numerical stability\n        self.output = tmp / torch.sum(tmp)\n        return self.output\n\n    def backward(self, output_gradient, learning_rate):\n        n = self.output.numel()\n        # Jacobian: dy_i/dz_j = y_i * (delta_ij - y_j)\n        return torch.matmul((torch.eye(n) - self.output.T) * self.output, output_gradient)", "pool": "class MaxPool(Layer):\n    def __init__(self, input_shape, kernel_size, stride):\n        self.input_shape = input_shape\n        self.input_depth, self.input_height, self.input_width = input_shape\n        self.kernel_size = kernel_size\n        self.stride = stride\n        # MaxPool has no learnable weights (see Quiz 2), so nothing else to initialize.\n\n    def forward(self, input):\n        self.input = input\n        k, s = self.kernel_size, self.stride\n        # all pooling windows: (channels, out_h, out_w, k, k)  ->  flatten each window to k*k values\n        windows = input.unfold(1, k, s).unfold(2, k, s)\n        windows = windows.reshape(*windows.shape[:3], k * k)\n        self.output, self.argmax = windows.max(dim=-1)       # max value and its position inside the window\n        return self.output\n\n    def backward(self, output_gradient, learning_rate):\n        k, s = self.kernel_size, self.stride\n        C, OH, OW = self.output.shape\n        # absolute (row, col) of each window's winner\n        channels = torch.arange(C).view(C, 1, 1).expand(C, OH, OW)\n        rows = (torch.arange(OH) * s).view(1, OH, 1) + self.argmax // k\n        cols = (torch.arange(OW) * s).view(1, 1, OW) + self.argmax % k\n        dx = torch.zeros(self.input_shape)\n        dx.index_put_((channels, rows, cols), output_gradient, accumulate=True)   # route the gradients\n        return dx", "poolcheck": "torch.manual_seed(2)\npool = MaxPool((3, 8, 8), kernel_size=2, stride=1)\nx = torch.randn(3, 8, 8)\nout = pool.forward(x)\ng = torch.randn_like(out)\ndx = pool.backward(g, 0.0)\n\nxt = x.clone().requires_grad_()\nyt = F.max_pool2d(xt[None], kernel_size=2, stride=1)[0]\nyt.backward(g)\nprint(\"forward matches :\", torch.allclose(out, yt.detach()))\nprint(\"backward matches:\", torch.allclose(dx, xt.grad, atol=1e-6))", "reshape": "class Reshape(Layer):\n    def __init__(self, input_shape, output_shape):\n        self.input_shape = input_shape\n        self.output_shape = output_shape\n\n    def forward(self, input):\n        return torch.reshape(input, self.output_shape)             # e.g. (5,25,25) -> (3125,1)\n\n    def backward(self, output_gradient, learning_rate):\n        return torch.reshape(output_gradient, self.input_shape)    # undo it for the gradient", "dense": "class Dense(Layer):\n    def __init__(self, input_size, output_size):\n        self.weights = torch.randn(output_size, input_size) * (1.0 / input_size) ** 0.5   # Xavier-style scaling\n        self.bias = torch.zeros(output_size, 1)\n\n    def forward(self, input):\n        self.input = input\n        return torch.matmul(self.weights, self.input) + self.bias        # Z = W.X + b\n\n    def backward(self, output_gradient, learning_rate):\n        weights_gradient = torch.matmul(output_gradient, self.input.T)   # dL/dW\n        input_gradient = torch.matmul(self.weights.T, output_gradient)   # dL/dX (uses the OLD weights)\n        self.weights -= learning_rate * weights_gradient\n        self.bias -= learning_rate * output_gradient                      # dL/db = output gradient\n        return input_gradient", "loss": "EPS = 1e-7\n\ndef log_loss(y_true, y_pred):\n    y_pred = y_pred.clamp(EPS, 1 - EPS)        # avoid log(0)\n    return torch.mean(-y_true * torch.log(y_pred) - (1 - y_true) * torch.log(1 - y_pred))\n\ndef log_loss_prime(y_true, y_pred):\n    # derivative of log_loss with respect to y_pred (starts the backward pass)\n    y_pred = y_pred.clamp(EPS, 1 - EPS)\n    return ((1 - y_true) / (1 - y_pred) - y_true / y_pred) / torch.numel(y_true)", "data": "# load MNIST data (downloaded once into ./mnist_data)\ntrain_dataset = datasets.MNIST(root=\"./mnist_data\", train=True, download=True)\ntest_dataset = datasets.MNIST(root=\"./mnist_data\", train=False, download=True)\n\nx_train, y_train = train_dataset.data, train_dataset.targets\nx_test, y_test = test_dataset.data, test_dataset.targets\nprint(x_train.shape, x_test.shape)\n\ndef preprocess_data(x, y, limit):\n    # take up to `limit` images of digit 0 and of digit 1\n    zero_index = torch.where(y == 0)[0][:limit]\n    one_index = torch.where(y == 1)[0][:limit]\n    all_indices = torch.cat((zero_index, one_index))\n    all_indices = all_indices[torch.randperm(len(all_indices))]       # shuffle\n    x, y = x[all_indices], y[all_indices]\n\n    x = x.reshape(len(x), 1, 28, 28).float() / 255        # (N,1,28,28), pixels in [0,1]\n    y = torch.eye(2)[y].reshape(len(y), 2, 1)             # one-hot, shape (N,2,1)\n    return x, y\n\nx_train, y_train = preprocess_data(x_train, y_train, limit=1000)   # 2,000 training images\nx_test, y_test = preprocess_data(x_test, y_test, limit=200)        # 400 test images\nprint(\"Train:\", x_train.shape, y_train.shape, \"| Test:\", x_test.shape)", "network": "torch.manual_seed(0)\nnetwork = [\n    Convolutional((1, 28, 28), kernel_size=3, depth=5),    # (1,28,28) -> (5,26,26)\n    ReLU(),\n    MaxPool((5, 26, 26), kernel_size=2, stride=1),          # -> (5,25,25)\n    Reshape((5, 25, 25), (5 * 25 * 25, 1)),                 # -> (3125,1)\n    Dense(5 * 25 * 25, 100),                                # -> (100,1)\n    TanH(),\n    Dense(100, 2),                                          # -> (2,1)\n    Softmax(),\n]", "train": "def predict(network, input):\n    output = input\n    for layer in network:                       # forward pass, layer by layer\n        output = layer.forward(output)\n    return output\n\n\ndef train(network, loss, loss_prime, x_train, y_train, epochs=5, learning_rate=0.01):\n    for e in range(epochs):\n        error, correct = 0.0, 0\n        start = time.time()\n        for x, y in zip(x_train, y_train):\n            output = predict(network, x)                                  # 1. forward\n            error += loss(y, output).item()                                # 2. loss\n            correct += int(torch.argmax(output) == torch.argmax(y))\n\n            grad = loss_prime(y, output)                                   # 3. backward\n            for layer in reversed(network):\n                grad = layer.backward(grad, learning_rate)\n\n        print(f\"Epoch {e + 1}/{epochs}, loss = {error / len(x_train):.4f}, \"\n              f\"train accuracy = {100 * correct / len(x_train):.2f}%, time = {time.time() - start:.0f}s\")\n\ntrain(network, log_loss, log_loss_prime, x_train, y_train, epochs=5, learning_rate=0.01)", "eval": "correct = 0\nfor x, y in zip(x_test, y_test):\n    output = predict(network, x)\n    if torch.argmax(output) == torch.argmax(y):\n        correct += 1\n\nprint(f\"Accuracy of the network on test data: {100 * correct / len(x_test):.2f}%  ({correct}/{len(x_test)})\")", "samples": "def show_random_samples(n=8):\n    idxs = random.sample(range(len(x_test)), n)\n    fig, axes = plt.subplots(1, n, figsize=(2 * n, 2.4))\n    for ax, idx in zip(axes, idxs):\n        pred = torch.argmax(predict(network, x_test[idx])).item()\n        true = torch.argmax(y_test[idx]).item()\n        ax.imshow(x_test[idx][0], cmap=\"gray\"); ax.axis(\"off\")\n        ax.set_title(f\"pred {pred} / true {true}\", color=\"green\" if pred == true else \"red\", fontsize=10)\n    plt.show()\n\nshow_random_samples()", "layerout": "def show_layer_outputs(network, x):\n    stages, out = [(\"Input\", x)], x\n    for layer, name in zip(network[:3], [\"Convolution\", \"ReLU\", \"MaxPool\"]):\n        out = layer.forward(out)\n        stages.append((name, out))\n\n    fig, axes = plt.subplots(len(stages), 5, figsize=(10, 8))\n    for r, (name, t) in enumerate(stages):\n        for c in range(5):\n            ax = axes[r][c]; ax.axis(\"off\")\n            if c < t.shape[0]:\n                ax.imshow(t[c])\n            if c == 0:\n                ax.set_title(name, loc=\"left\", fontsize=11)\n    plt.show()\n\nshow_layer_outputs(network, x_test[random.randint(0, len(x_test) - 1)])", "shapes": "def layer_shape(network, input):\n    output = input\n    print(f\"{'Input':<14}{tuple(output.shape)}\")\n    for layer in network:\n        output = layer.forward(output)\n        print(f\"{type(layer).__name__:<14}{tuple(output.shape)}\")\n    return output.argmax().item()\n\nsample = random.randint(0, len(x_test) - 1)\nprint(\"True label:\", torch.argmax(y_test[sample]).item())\nprint(\"Predicted :\", layer_shape(network, x_test[sample]))"};
+init();
+
+})();
+</script>
+</body>
+</html>
